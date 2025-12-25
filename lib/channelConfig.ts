@@ -42,6 +42,11 @@ export const ALLOWED_CHANNELS: AllowedChannel[] = [
         id: 'UCT_RhM-i6or1qS1JRm4Bqrw',
         name: '네딸바',
         description: '빛의 상원수'
+    },
+    {
+        id: 'UCT745jE-45-ZBvB6zT_7EnA',
+        name: '리버스온',
+        description: '리버스온'
     }
 ];
 
