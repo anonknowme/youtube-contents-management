@@ -1,0 +1,42 @@
+name: Sync YouTube Channels
+
+on:
+  schedule:
+    # 매 6시간마다 실행 (0시, 6시, 12시, 18시 UTC)
+    - cron: '0 */6 * * *'
+  
+  # 수동 실행 가능
+  workflow_dispatch:
+
+jobs:
+  sync-channels:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run sync script
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: npx tsx scripts/sync.ts
+      
+      - name: Log completion
+        if: success()
+        run: echo "✅ All channels synced successfully"
+      
+      - name: Log failure
+        if: failure()
+        run: echo "❌ Sync failed, check logs above"

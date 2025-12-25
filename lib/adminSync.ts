@@ -110,12 +110,22 @@ export async function syncSingleChannel(channelId: string) {
     }
 }
 
+export interface SyncResult {
+    channelId: string;
+    name: string;
+    success: boolean;
+    error?: string;
+    action?: string;
+    reason?: string;
+    videoCount?: number;
+}
+
 /**
  * 모든 허용된 채널 동기화
  */
 export async function syncAllAllowedChannels() {
     const channels = getAllowedChannels();
-    const results = [];
+    const results: SyncResult[] = [];
 
     console.log(`🚀 전체 채널 sync 시작 (${channels.length}개)`);
 
