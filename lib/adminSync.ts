@@ -3,8 +3,11 @@ import { syncChannelData, saveChannel } from './databaseService';
 import { getAllowedChannels } from './channelConfig';
 import { supabaseAdmin } from './supabase';
 
-if (!supabaseAdmin) {
-    throw new Error('SUPABASE_SERVICE_ROLE_KEY가 설정되지 않았습니다!');
+function checkAdminPermission() {
+    if (!supabaseAdmin) {
+        throw new Error('SUPABASE_SERVICE_ROLE_KEY가 설정되지 않았습니다!');
+    }
+    return supabaseAdmin;
 }
 
 /**
@@ -16,7 +19,7 @@ export async function syncSingleChannel(channelId: string) {
 
     try {
         // 1. DB에서 채널 확인
-        const { data: existingChannel } = await supabaseAdmin!
+        const { data: existingChannel } = await checkAdminPermission()
             .from('channels')
             .select('id, title, last_synced_at')
             .eq('channel_id', channelId)
@@ -35,7 +38,7 @@ export async function syncSingleChannel(channelId: string) {
             console.log(`📋 기존 채널: ${existingChannel.title}`);
 
             // DB에서 최신 영상 조회
-            const { data: latestInDB } = await supabaseAdmin!
+            const { data: latestInDB } = await checkAdminPermission()
                 .from('videos')
                 .select('published_at')
                 .eq('channel_id', existingChannel.id)

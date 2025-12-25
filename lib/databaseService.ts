@@ -8,8 +8,12 @@
 import { supabaseAdmin } from './supabase';
 import type { YouTubeChannel, YouTubeVideo } from './youtubeService';
 
-if (!supabaseAdmin) {
-    throw new Error('SUPABASE_SERVICE_ROLE_KEY가 설정되지 않았습니다!');
+// 키 확인 함수 (함수 내부에서 호출)
+function checkAdminPermission() {
+    if (!supabaseAdmin) {
+        throw new Error('SUPABASE_SERVICE_ROLE_KEY가 설정되지 않았습니다!');
+    }
+    return supabaseAdmin;
 }
 
 /**
@@ -22,7 +26,7 @@ export async function saveChannel(channelData: YouTubeChannel): Promise<string> 
     console.log('💾 채널 저장 중:', channelData.title);
 
     // 이미 존재하는지 확인
-    const { data: existing } = await supabaseAdmin!
+    const { data: existing } = await checkAdminPermission()
         .from('channels')
         .select('id')
         .eq('channel_id', channelData.id)
@@ -30,7 +34,7 @@ export async function saveChannel(channelData: YouTubeChannel): Promise<string> 
 
     if (existing) {
         // 업데이트
-        const { data, error } = await supabaseAdmin!
+        const { data, error } = await checkAdminPermission()
             .from('channels')
             .update({
                 title: channelData.title,
@@ -52,7 +56,7 @@ export async function saveChannel(channelData: YouTubeChannel): Promise<string> 
         return existing.id;
     } else {
         // 새로 삽입
-        const { data, error } = await supabaseAdmin!
+        const { data, error } = await checkAdminPermission()
             .from('channels')
             .insert({
                 channel_id: channelData.id,
@@ -96,7 +100,7 @@ export async function saveVideos(
         const viewCount = parseInt(video.statistics.viewCount);
 
         // 이미 존재하는지 확인
-        const { data: existing } = await supabaseAdmin!
+        const { data: existing } = await checkAdminPermission()
             .from('videos')
             .select('id')
             .eq('video_id', video.id)
@@ -104,7 +108,7 @@ export async function saveVideos(
 
         if (existing) {
             // 통계만 업데이트 (조회수, 좋아요 등은 변할 수 있음)
-            const { error } = await supabaseAdmin!
+            const { error } = await checkAdminPermission()
                 .from('videos')
                 .update({
                     view_count: viewCount,
@@ -121,7 +125,7 @@ export async function saveVideos(
             }
         } else {
             // 새로 삽입
-            const { error } = await supabaseAdmin!
+            const { error } = await checkAdminPermission()
                 .from('videos')
                 .insert({
                     video_id: video.id,
