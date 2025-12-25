@@ -453,23 +453,45 @@ export default function Home() {
                                             <div>👁️ {formatNumber(video.view_count)}</div>
                                             <div>👍 {formatNumber(video.like_count)}</div>
                                         </div>
-                                        <a
-                                            href={video.url}
-                                            target="_blank"
-                                            style={{
-                                                display: 'block',
-                                                textAlign: 'center',
-                                                padding: '10px',
-                                                backgroundColor: '#f0f0f0',
-                                                color: '#0070f3',
-                                                textDecoration: 'none',
-                                                borderRadius: '6px',
-                                                fontSize: '13px',
-                                                fontWeight: 'bold'
-                                            }}
-                                        >
-                                            영상 보기 →
-                                        </a>
+
+                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                            <a
+                                                href={video.url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                style={{
+                                                    flex: 1,
+                                                    display: 'block',
+                                                    padding: '8px 0',
+                                                    backgroundColor: '#f0f0f0',
+                                                    color: '#333',
+                                                    textDecoration: 'none',
+                                                    borderRadius: '4px',
+                                                    textAlign: 'center',
+                                                    fontSize: '13px',
+                                                    fontWeight: '500'
+                                                }}
+                                            >
+                                                영상 보기
+                                            </a>
+                                            <a
+                                                href={`/video/${video.video_id}`}
+                                                style={{
+                                                    flex: 1,
+                                                    display: 'block',
+                                                    padding: '8px 0',
+                                                    backgroundColor: '#e6f0ff',
+                                                    color: '#0066cc',
+                                                    textDecoration: 'none',
+                                                    borderRadius: '4px',
+                                                    textAlign: 'center',
+                                                    fontSize: '13px',
+                                                    fontWeight: '500'
+                                                }}
+                                            >
+                                                📊 상세 분석
+                                            </a>
+                                        </div>
                                     </div>
                                 </div>
                             ));

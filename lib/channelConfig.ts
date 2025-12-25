@@ -47,7 +47,17 @@ export const ALLOWED_CHANNELS: AllowedChannel[] = [
         id: 'UCT745jE-45-ZBvB6zT_7EnA',
         name: '리버스온',
         description: '리버스온'
-    }
+    },
+    {
+        id: 'UC1OxcwoU_Pu5CPoVhrUyDgg',
+        name: 'Buck차는 비트코인',
+        description: ''
+    },
+    {
+        id: 'UCVLrq7pwVPTPHszFNbr8mSA',
+        name: '1분 비트코인',
+        description: ''
+    },
 ];
 
 /**
