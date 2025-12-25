@@ -32,7 +32,7 @@ export async function GET(
         return NextResponse.json({
             success: false,
             error: error.message || 'Failed to fetch transcript',
-            message: '자막을 가져올 수 없습니다. 이 영상은 자막이 없거나 비공개일 수 있습니다.'
+            message: `자막을 가져올 수 없습니다. (${error.message})`
         }, { status: 500 });
     }
 }
