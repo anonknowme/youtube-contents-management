@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { YoutubeTranscript } from '@danielxceron/youtube-transcript';
 import { supabaseAdmin } from '@/lib/supabase';
 
 export async function GET(
@@ -13,8 +12,6 @@ export async function GET(
             throw new Error('Server configuration error: SUPABASE_SERVICE_ROLE_KEY missing');
         }
 
-        console.log(`[Transcript] Request for ${videoId}`);
-
         // 1. Check DB first
         const { data: transcriptData } = await supabaseAdmin!
             .from('video_transcripts')
@@ -23,51 +20,30 @@ export async function GET(
             .single();
 
         if (transcriptData?.content) {
-            console.log(`[Transcript] Found in DB (${transcriptData.content.length} chars)`);
             return NextResponse.json({
                 success: true,
                 data: {
                     videoId,
                     transcript: transcriptData.content,
-                    segments: [] // Segments are lost when storing raw text, but that's okay for analysis
+                    segments: []
                 }
             });
         }
 
-        // 2. Fallback: Fetch from YouTube (All Environments)
-        console.log(`[Transcript] Not in DB, fetching from YouTube...`);
-
-        // Fetch transcript
-        const transcriptSegments = await YoutubeTranscript.fetchTranscript(videoId);
-        const fullText = transcriptSegments.map(item => item.text).join(' ');
-
-        // Save to DB for future use
-        if (fullText) {
-            await supabaseAdmin!
-                .from('video_transcripts')
-                .upsert({
-                    video_id: videoId,
-                    content: fullText,
-                    created_at: new Date().toISOString()
-                });
-            console.log(`[Transcript] Saved to DB (video_transcripts)`);
-        }
-
+        // If not found in DB, return 404 immediately. 
+        // The Web App should NOT fetch from YouTube directly.
         return NextResponse.json({
-            success: true,
-            data: {
-                videoId,
-                transcript: fullText,
-                segments: transcriptSegments
-            }
-        });
+            success: false,
+            message: '자막 데이터가 DB에 없습니다. 로컬 Sync를 실행해주세요.'
+        }, { status: 404 });
+
     } catch (error: any) {
         console.error('[Transcript] Fetch error:', error);
 
         return NextResponse.json({
             success: false,
             error: error.message || 'Failed to fetch transcript',
-            message: `자막을 가져올 수 없습니다. (${error.message})`
+            message: `자막을 조회하는 중 오류가 발생했습니다. (${error.message})`
         }, { status: 500 });
     }
 }

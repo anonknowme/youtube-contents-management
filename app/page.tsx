@@ -79,13 +79,14 @@ export default function Home() {
                 <h1 style={{
                     fontSize: '24px',
                     margin: '0 0 8px 0',
-                    fontWeight: 'bold'
+                    fontWeight: 'bold',
+                    color: '#1a1a1a'
                 }}>
                     📊 YouTube 채널 분석
                 </h1>
                 <p style={{
                     fontSize: '14px',
-                    color: '#666',
+                    color: '#4a4a4a',
                     margin: 0
                 }}>
                     채널의 바이럴 영상을 분석해보세요
@@ -105,7 +106,7 @@ export default function Home() {
                         fontSize: '13px',
                         fontWeight: 'bold',
                         marginBottom: '12px',
-                        color: '#333'
+                        color: '#1a1a1a'
                     }}>
                         빠른 선택
                     </p>
@@ -162,7 +163,9 @@ export default function Home() {
                         marginBottom: '12px',
                         boxSizing: 'border-box',
                         opacity: loading ? 0.5 : 1,
-                        cursor: loading ? 'not-allowed' : 'text'
+                        cursor: loading ? 'not-allowed' : 'text',
+                        color: '#1a1a1a', // Force dark text
+                        backgroundColor: '#fff' // Ensure white background
                     }}
                     onKeyPress={(e) => e.key === 'Enter' && !loading && search()}
                 />
@@ -228,7 +231,8 @@ export default function Home() {
                                     fontWeight: 'bold',
                                     overflow: 'hidden',
                                     textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap'
+                                    whiteSpace: 'nowrap',
+                                    color: '#1a1a1a'
                                 }}>
                                     {data.channel.title}
                                 </h3>
@@ -237,7 +241,7 @@ export default function Home() {
                                     gridTemplateColumns: 'repeat(3, 1fr)',
                                     gap: '8px',
                                     fontSize: '12px',
-                                    color: '#666'
+                                    color: '#4a4a4a'
                                 }}>
                                     <div>👥 {formatNumber(parseInt(data.channel.subscriber_count || '0'))}</div>
                                     <div>🎬 {data.channel.video_count}개</div>
@@ -258,7 +262,8 @@ export default function Home() {
                         <p style={{
                             fontSize: '14px',
                             fontWeight: 'bold',
-                            marginBottom: '12px'
+                            marginBottom: '12px',
+                            color: '#1a1a1a'
                         }}>
                             영상 목록 ({filterByVideoType(data.videos || [], videoType).length}개)
                         </p>
@@ -435,6 +440,7 @@ export default function Home() {
                                             margin: '0 0 8px 0',
                                             lineHeight: '1.4',
                                             fontWeight: '600',
+                                            color: '#1a1a1a',
                                             display: '-webkit-box',
                                             WebkitLineClamp: 2,
                                             WebkitBoxOrient: 'vertical',
@@ -447,7 +453,7 @@ export default function Home() {
                                             gridTemplateColumns: 'repeat(2, 1fr)',
                                             gap: '8px',
                                             fontSize: '12px',
-                                            color: '#666',
+                                            color: '#4a4a4a',
                                             marginBottom: '12px'
                                         }}>
                                             <div>👁️ {formatNumber(video.view_count)}</div>
