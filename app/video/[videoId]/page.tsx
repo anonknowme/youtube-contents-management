@@ -317,7 +317,7 @@ ${transcript}
                                     cursor: 'not-allowed',
                                 }}
                             >
-                                🧪 AI 분석 기능 테스트 중입니다
+                                🧪 AI 분석 기능 준비 중입니다
                             </button>
                         )}
                         {aiError && (

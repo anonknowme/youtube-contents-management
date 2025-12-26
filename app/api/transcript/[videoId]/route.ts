@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 
 export async function GET(
     request: NextRequest,
@@ -8,16 +8,17 @@ export async function GET(
     const { videoId } = await params;
 
     try {
-        if (!supabaseAdmin) {
-            throw new Error('Server configuration error: SUPABASE_SERVICE_ROLE_KEY missing');
-        }
-
-        // 1. Check DB first
-        const { data: transcriptData } = await supabaseAdmin!
+        // 1. Check DB first (Using public client for read-only)
+        const { data: transcriptData, error } = await supabase
             .from('video_transcripts')
             .select('content')
             .eq('video_id', videoId)
             .single();
+
+        if (error && error.code !== 'PGRST116') { // PGRST116 is 'not found'
+            console.error('Supabase read error:', error);
+            throw error;
+        }
 
         if (transcriptData?.content) {
             return NextResponse.json({
