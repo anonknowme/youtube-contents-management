@@ -34,37 +34,33 @@ export async function GET(
             });
         }
 
-        // 2. Fallback: Fetch from YouTube (Development Only)
-        if (process.env.NODE_ENV === 'development') {
-            console.log(`[Transcript] Not in DB, fetching from YouTube...`);
+        // 2. Fallback: Fetch from YouTube (All Environments)
+        console.log(`[Transcript] Not in DB, fetching from YouTube...`);
 
-            // Fetch transcript
-            const transcriptSegments = await YoutubeTranscript.fetchTranscript(videoId);
-            const fullText = transcriptSegments.map(item => item.text).join(' ');
+        // Fetch transcript
+        const transcriptSegments = await YoutubeTranscript.fetchTranscript(videoId);
+        const fullText = transcriptSegments.map(item => item.text).join(' ');
 
-            // Save to DB for future use
-            if (fullText) {
-                await supabaseAdmin!
-                    .from('video_transcripts')
-                    .upsert({
-                        video_id: videoId,
-                        content: fullText,
-                        created_at: new Date().toISOString()
-                    });
-                console.log(`[Transcript] Saved to DB (video_transcripts)`);
-            }
-
-            return NextResponse.json({
-                success: true,
-                data: {
-                    videoId,
-                    transcript: fullText,
-                    segments: transcriptSegments
-                }
-            });
-        } else {
-            throw new Error('Transcript not found in DB. Please sync locally first.');
+        // Save to DB for future use
+        if (fullText) {
+            await supabaseAdmin!
+                .from('video_transcripts')
+                .upsert({
+                    video_id: videoId,
+                    content: fullText,
+                    created_at: new Date().toISOString()
+                });
+            console.log(`[Transcript] Saved to DB (video_transcripts)`);
         }
+
+        return NextResponse.json({
+            success: true,
+            data: {
+                videoId,
+                transcript: fullText,
+                segments: transcriptSegments
+            }
+        });
     } catch (error: any) {
         console.error('[Transcript] Fetch error:', error);
 
