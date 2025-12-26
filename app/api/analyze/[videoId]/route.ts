@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { summarizeTranscript } from '@/lib/gemini';
+import { supabaseAdmin } from '@/lib/supabase';
+import { getComments } from '@/lib/youtubeService';
 
 export async function POST(
     request: NextRequest,
@@ -10,37 +12,29 @@ export async function POST(
     try {
         console.log(`[AI Analysis] Starting analysis for ${videoId}...`);
 
-        // Fetch transcript from our API
-        const transcriptResponse = await fetch(
-            `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001'}/api/transcript/${videoId}`
-        );
-
-        if (!transcriptResponse.ok) {
-            throw new Error('Failed to fetch transcript');
+        if (!supabaseAdmin) {
+            throw new Error('Server configuration error: SUPABASE_SERVICE_ROLE_KEY missing');
         }
 
-        const transcriptData = await transcriptResponse.json();
+        // 1. Fetch transcript directly from DB
+        const { data: transcriptData } = await supabaseAdmin
+            .from('video_transcripts')
+            .select('content')
+            .eq('video_id', videoId)
+            .single();
 
-        if (!transcriptData.success || !transcriptData.data.transcript) {
-            throw new Error('No transcript available');
+        if (!transcriptData?.content) {
+            throw new Error('자막 데이터가 없습니다. 먼저 페이지를 새로고침하여 동기화를 진행해주세요.');
         }
 
-        const transcript = transcriptData.data.transcript;
+        const transcript = transcriptData.content;
 
-        // Fetch comments for analysis
-        let comments = [];
+        // 2. Fetch comments directly from YouTube API
+        // DB 저장 없이 실시간으로 가져와서 분석에 활용
+        let comments: any[] = [];
         try {
-            const commentsResponse = await fetch(
-                `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001'}/api/comments/${videoId}`
-            );
-
-            if (commentsResponse.ok) {
-                const commentsData = await commentsResponse.json();
-                if (commentsData.success) {
-                    comments = commentsData.data.comments;
-                    console.log(`[AI Analysis] Retrieved ${comments.length} comments for analysis`);
-                }
-            }
+            comments = await getComments(videoId, 50); // 상위 50개 댓글 분석
+            console.log(`[AI Analysis] Retrieved ${comments.length} comments for analysis`);
         } catch (commentError) {
             console.warn('[AI Analysis] Failed to fetch comments, proceeding without them:', commentError);
         }
@@ -66,7 +60,7 @@ export async function POST(
         return NextResponse.json({
             success: false,
             error: error.message || 'Failed to analyze video',
-            message: 'AI 분석에 실패했습니다. 잠시 후 다시 시도해주세요.'
+            message: `AI 분석에 실패했습니다. (${error.message})`
         }, { status: 500 });
     }
 }

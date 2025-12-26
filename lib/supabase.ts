@@ -154,6 +154,23 @@ export type Database = {
                     updated_at?: string;
                 };
             };
+            video_transcripts: {
+                Row: {
+                    video_id: string;
+                    content: string;
+                    created_at: string;
+                };
+                Insert: {
+                    video_id: string;
+                    content: string;
+                    created_at?: string;
+                };
+                Update: {
+                    video_id?: string;
+                    content?: string;
+                    created_at?: string;
+                };
+            };
         };
     };
 };

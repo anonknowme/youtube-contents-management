@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { formatNumber } from '@/lib/formatNumber';
@@ -115,12 +115,57 @@ export default function VideoDetailPage() {
         fetchTranscript();
     }, [videoId]);
 
+    // Memoize the full info text to ensure consistency between display and copy
+    const fullInfoText = useMemo(() => {
+        if (!video || !transcript) return '';
+
+        return `
+<심층 분석 요청>
+아래의 [영상 정보], [성과 분석], [초반 스크립트 (1분/300자)], [스크립트] 내용을 바탕으로 이 영상의 좋은(혹은 나쁜) 성과의 원인을 심층 분석해주세요.
+
+특히 [초반 스크립트 (1분/300자)]와 같은 황금같은 시간을 잘 활용했는지, 혹은 쓸데없는 말을 하느라 낭비하진 않았는지를 평가해주세요.
+
+바이럴 점수는 비슷한 시기에 올렸던 다른 영상대비 조회수가 얼마나 잘 나왔는지를 평가하는 점수입니다.
+
+분석은 다음 5가지 항목으로 정리해 주세요:
+1. 🎯 후킹 포인트 (Hook): 초반부 스크립트에서 시청자를 사로잡은(혹은 사로잡지 못한) 요소
+2. 🔥 바이럴 요인 (Viral Factor): 스크립트 구조와 성과 지표(조회수/좋아요/댓글수)를 기반으로 한 인기(혹은 비인기) 비결
+3. 📎 바이럴이 잘된 영상이라면 그럼에도 부족했던 점을, 잘 안된 영상이라면 그럼에도 잘했던 점
+4. 💡 벤치마킹 포인트: 비슷한 영상을 제작할 때 참고할 점
+5. 📝 핵심 3줄 요약
+
+[영상 정보]
+📝제목: ${video.title}
+🔗링크: https://www.youtube.com/watch?v=${video.video_id}
+🖼썸네일: ${video.thumbnail_url || ''}
+
+[성과 분석]
+💯바이럴 점수: ${(video.viral_score || 0).toFixed(0)}점
+👀조회수: ${formatNumber(video.view_count)}회
+👍좋아요: ${formatNumber(video.like_count)} (조회수 대비 ${video.view_count > 0 ? (video.like_count / video.view_count * 100).toFixed(1) : '0.0'}%)
+💬댓글수: ${formatNumber(video.comment_count)} (조회수 대비 ${video.view_count > 0 ? (video.comment_count / video.view_count * 100).toFixed(1) : '0.0'}%)
+
+[초반 스크립트 (1분/300자)]
+${transcript.substring(0, 300)}...
+
+[전체 스크립트]
+${transcript}
+        `.trim();
+    }, [video, transcript]);
+
     if (loading) return <div style={{ padding: '20px', textAlign: 'center' }}>로딩 중...</div>;
     if (error) return <div style={{ padding: '20px', textAlign: 'center', color: 'red' }}>{error}</div>;
     if (!video) return null;
 
     return (
         <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px' }}>
+            {/* ... (Header and Player sections unchanged) ... */}
+
+            {/* (Skipping strictly unchanged parts for brevity in replacement, 
+                but replace_file_content requires context. 
+                I will replace the render part mostly) 
+            */}
+
             {/* Header */}
             <div style={{ marginBottom: '20px' }}>
                 <a href="/" style={{ textDecoration: 'none', color: '#666', fontSize: '14px' }}>
@@ -222,41 +267,59 @@ export default function VideoDetailPage() {
                             영상의 자막을 분석하여<br />
                             핵심 내용을 요약해드립니다.
                         </p>
-                        <button
-                            onClick={async () => {
-                                setAiLoading(true);
-                                setAiError('');
-                                try {
-                                    const response = await fetch(`/api/analyze/${videoId}`, {
-                                        method: 'POST'
-                                    });
-                                    const data = await response.json();
-                                    if (data.success) {
-                                        setAiAnalysis(data.data.summary);
-                                    } else {
-                                        setAiError(data.message || 'AI 분석에 실패했습니다.');
+                        {process.env.NODE_ENV === 'development' ? (
+                            <button
+                                onClick={async () => {
+                                    setAiLoading(true);
+                                    setAiError('');
+                                    try {
+                                        const response = await fetch(`/api/analyze/${videoId}`, {
+                                            method: 'POST'
+                                        });
+                                        const data = await response.json();
+                                        if (data.success) {
+                                            setAiAnalysis(data.data.summary);
+                                        } else {
+                                            setAiError(data.message || 'AI 분석에 실패했습니다.');
+                                        }
+                                    } catch (err) {
+                                        setAiError('AI 분석 중 오류가 발생했습니다.');
+                                    } finally {
+                                        setAiLoading(false);
                                     }
-                                } catch (err) {
-                                    setAiError('AI 분석 중 오류가 발생했습니다.');
-                                } finally {
-                                    setAiLoading(false);
-                                }
-                            }}
-                            disabled={aiLoading}
-                            style={{
-                                background: aiLoading ? '#ccc' : 'linear-gradient(45deg, #2196F3, #21CBF3)',
-                                color: 'white',
-                                border: 'none',
-                                padding: '12px 24px',
-                                borderRadius: '8px',
-                                fontSize: '16px',
-                                fontWeight: 'bold',
-                                cursor: aiLoading ? 'not-allowed' : 'pointer',
-                                boxShadow: '0 4px 12px rgba(33, 150, 243, 0.3)'
-                            }}
-                        >
-                            {aiLoading ? '분석 중...' : '✨ AI 분석 시작하기'}
-                        </button>
+                                }}
+                                disabled={aiLoading}
+                                style={{
+                                    background: aiLoading ? '#ccc' : 'linear-gradient(45deg, #2196F3, #21CBF3)',
+                                    color: 'white',
+                                    border: 'none',
+                                    padding: '12px 24px',
+                                    borderRadius: '8px',
+                                    fontSize: '16px',
+                                    fontWeight: 'bold',
+                                    cursor: aiLoading ? 'not-allowed' : 'pointer',
+                                    boxShadow: '0 4px 12px rgba(33, 150, 243, 0.3)'
+                                }}
+                            >
+                                {aiLoading ? '분석 중...' : '✨ AI 분석 시작하기'}
+                            </button>
+                        ) : (
+                            <button
+                                disabled
+                                style={{
+                                    background: '#f5f5f5',
+                                    color: '#999',
+                                    border: '1px solid #ddd',
+                                    padding: '12px 24px',
+                                    borderRadius: '8px',
+                                    fontSize: '16px',
+                                    fontWeight: 'bold',
+                                    cursor: 'not-allowed',
+                                }}
+                            >
+                                🧪 AI 분석 기능 테스트 중입니다
+                            </button>
+                        )}
                         {aiError && (
                             <p style={{ color: '#f44336', marginTop: '16px', fontSize: '14px' }}>
                                 {aiError}
@@ -295,7 +358,7 @@ export default function VideoDetailPage() {
                 )}
             </div>
 
-            {/* Transcript */}
+            {/* Transcript / Full Info Display */}
             <div>
                 <div style={{
                     display: 'flex',
@@ -304,36 +367,46 @@ export default function VideoDetailPage() {
                     marginBottom: '12px'
                 }}>
                     <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0 }}>
-                        📝 영상 자막 (Transcript)
+                        📝 상세 정보
                     </h3>
                     {!transcriptLoading && transcript && (
                         <button
                             onClick={() => {
-                                navigator.clipboard.writeText(transcript);
+                                navigator.clipboard.writeText(fullInfoText);
                                 const btn = document.getElementById('copy-btn');
                                 if (btn) {
-                                    const originalText = btn.innerText;
-                                    btn.innerText = '✅ 복사 완료!';
+                                    const originalText = btn.innerHTML;
+                                    btn.innerHTML = '✅ 복사 완료!';
+                                    btn.style.backgroundColor = '#e8f5e9';
+                                    btn.style.borderColor = '#4caf50';
+                                    btn.style.color = '#2e7d32';
+
                                     setTimeout(() => {
-                                        btn.innerText = originalText;
+                                        btn.innerHTML = originalText;
+                                        btn.style.backgroundColor = '#fff';
+                                        btn.style.borderColor = '#ddd';
+                                        btn.style.color = '#333';
                                     }, 2000);
                                 }
                             }}
                             id="copy-btn"
                             style={{
-                                padding: '6px 12px',
+                                padding: '8px 16px',
                                 fontSize: '14px',
+                                fontWeight: '600',
                                 borderRadius: '6px',
                                 border: '1px solid #ddd',
                                 backgroundColor: '#fff',
+                                color: '#333',
                                 cursor: 'pointer',
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '4px',
-                                transition: 'all 0.2s'
+                                gap: '6px',
+                                transition: 'all 0.2s',
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
                             }}
                         >
-                            📋 전체 복사
+                            📋 복사하기
                         </button>
                     )}
                 </div>
@@ -357,11 +430,12 @@ export default function VideoDetailPage() {
                         borderRadius: '12px',
                         fontSize: '15px',
                         border: '1px solid #eee',
-                        maxHeight: '400px',        // 최대 높이 설정
-                        overflowY: 'auto',         // 세로 스크롤 활성화
-                        scrollbarWidth: 'thin',    // 최신 브라우저 스크롤바 스타일
+                        maxHeight: '400px',
+                        overflowY: 'auto',
+                        scrollbarWidth: 'thin',
+                        fontFamily: 'monospace' // 데이터 가독성을 위해 고정폭 글꼴 추천
                     }}>
-                        {transcript}
+                        {fullInfoText}
                     </div>
                 ) : (
                     <div style={{

@@ -474,44 +474,23 @@ export default function Home() {
                                             >
                                                 영상 보기
                                             </a>
-                                            {process.env.NODE_ENV === 'development' ? (
-                                                <a
-                                                    href={`/video/${video.video_id}`}
-                                                    style={{
-                                                        flex: 1,
-                                                        display: 'block',
-                                                        padding: '8px 0',
-                                                        backgroundColor: '#e6f0ff',
-                                                        color: '#0066cc',
-                                                        textDecoration: 'none',
-                                                        borderRadius: '4px',
-                                                        textAlign: 'center',
-                                                        fontSize: '13px',
-                                                        fontWeight: '500'
-                                                    }}
-                                                >
-                                                    📊 상세 분석
-                                                </a>
-                                            ) : (
-                                                <span
-                                                    style={{
-                                                        flex: 1,
-                                                        display: 'block',
-                                                        padding: '8px 0',
-                                                        backgroundColor: '#f5f5f5',
-                                                        color: '#999',
-                                                        borderRadius: '4px',
-                                                        textAlign: 'center',
-                                                        fontSize: '13px',
-                                                        fontWeight: '500',
-                                                        cursor: 'not-allowed',
-                                                        border: '1px solid #eee'
-                                                    }}
-                                                    title="서버 점검중입니다"
-                                                >
-                                                    📊 상세 분석 (점검중)
-                                                </span>
-                                            )}
+                                            <a
+                                                href={`/video/${video.video_id}`}
+                                                style={{
+                                                    flex: 1,
+                                                    display: 'block',
+                                                    padding: '8px 0',
+                                                    backgroundColor: '#e6f0ff',
+                                                    color: '#0066cc',
+                                                    textDecoration: 'none',
+                                                    borderRadius: '4px',
+                                                    textAlign: 'center',
+                                                    fontSize: '13px',
+                                                    fontWeight: '500'
+                                                }}
+                                            >
+                                                📊 상세 분석
+                                            </a>
                                         </div>
                                     </div>
                                 </div>

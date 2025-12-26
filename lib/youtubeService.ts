@@ -1,3 +1,5 @@
+import { YoutubeTranscript } from '@danielxceron/youtube-transcript';
+
 /**
  * YouTube Data API v3 서비스 - 페이지네이션 지원
  * 
@@ -275,4 +277,54 @@ export async function getChannelVideos(
     console.log(`✅ 총 ${allVideos.length}개 영상 상세 정보 수집 완료`);
 
     return allVideos;
+}
+
+/**
+ * 영상의 자막 가져오기
+ * 
+ * @param videoId - 영상 ID
+ * @returns 자막 텍스트 (실패시 null)
+ */
+export async function fetchTranscript(videoId: string): Promise<string | null> {
+    try {
+        const transcript = await YoutubeTranscript.fetchTranscript(videoId);
+        return transcript.map(item => item.text).join(' ');
+    } catch (error) {
+        console.warn(`[Transcript] Failed to fetch for ${videoId}`);
+        return null; // 실패해도 전체 프로세스는 계속되도록 null 반환
+    }
+}
+
+/**
+ * 영상의 댓글 가져오기 (상위 N개)
+ */
+export async function getComments(videoId: string, maxResults: number = 50): Promise<any[]> {
+    const apiKey = process.env.YOUTUBE_API_KEY;
+
+    if (!apiKey) return [];
+
+    try {
+        const url = new URL('https://www.googleapis.com/youtube/v3/commentThreads');
+        url.searchParams.append('part', 'snippet');
+        url.searchParams.append('videoId', videoId);
+        url.searchParams.append('maxResults', maxResults.toString());
+        url.searchParams.append('order', 'relevance'); // 관련성 순
+        url.searchParams.append('key', apiKey);
+
+        const response = await fetch(url.toString());
+        const data = await response.json();
+
+        if (!data.items) return [];
+
+        return data.items.map((item: any) => ({
+            id: item.id,
+            author: item.snippet.topLevelComment.snippet.authorDisplayName,
+            text: item.snippet.topLevelComment.snippet.textDisplay,
+            likeCount: item.snippet.topLevelComment.snippet.likeCount,
+            publishedAt: item.snippet.topLevelComment.snippet.publishedAt
+        }));
+    } catch (error) {
+        console.warn(`[Comments] Failed to fetch for ${videoId}`, error);
+        return [];
+    }
 }

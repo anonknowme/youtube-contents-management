@@ -184,3 +184,21 @@ export async function syncChannelData(
         videoCount: videoCount,
     };
 }
+
+/**
+ * 자막 데이터 저장
+ */
+export async function saveTranscript(videoId: string, transcript: string) {
+    const { error } = await checkAdminPermission()
+        .from('video_transcripts')
+        .upsert({
+            video_id: videoId,
+            content: transcript,
+            created_at: new Date().toISOString()
+        });
+
+    if (error) {
+        console.error(`❌ 자막 저장 실패 (${videoId}):`, error);
+        throw error;
+    }
+}
