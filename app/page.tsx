@@ -122,48 +122,55 @@ export default function Home() {
                 boxShadow: 'var(--shadow-base)',
                 position: 'relative'
             }}>
-                {/* Theme Switcher */}
                 <div style={{
-                    position: 'absolute',
-                    top: '20px',
-                    right: '16px',
                     display: 'flex',
-                    gap: '4px',
-                    backgroundColor: 'var(--bg-tertiary)',
-                    padding: '4px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border-primary)'
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-start',
+                    marginBottom: '8px'
                 }}>
-                    {(['light', 'dark', 'cypherpunk'] as const).map((t) => (
-                        <button
-                            key={t}
-                            onClick={() => setTheme(t)}
-                            style={{
-                                padding: '6px 10px',
-                                borderRadius: '6px',
-                                border: 'none',
-                                backgroundColor: theme === t ? 'var(--accent-primary)' : 'transparent',
-                                color: theme === t ? 'var(--text-inverse)' : 'var(--text-secondary)',
-                                fontSize: '18px',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s'
-                            }}
-                            title={t}
-                        >
-                            {t === 'light' ? '☀️' : t === 'dark' ? '🌙' : '🕶️'}
-                        </button>
-                    ))}
-                </div>
+                    <h1 style={{
+                        fontSize: '28px',
+                        margin: 0,
+                        fontWeight: 'bold',
+                        color: 'var(--text-primary)',
+                        letterSpacing: '-0.5px',
+                        lineHeight: 1.2,
+                        paddingRight: '16px' // 스위처와의 간격 확보
+                    }}>
+                        유튜브 영상 바이럴 분석
+                    </h1>
 
-                <h1 style={{
-                    fontSize: '28px',
-                    margin: '0 0 8px 0',
-                    fontWeight: 'bold',
-                    color: 'var(--text-primary)',
-                    letterSpacing: '-0.5px'
-                }}>
-                    유튜브 영상 바이럴 분석
-                </h1>
+                    {/* Theme Switcher */}
+                    <div style={{
+                        display: 'flex',
+                        gap: '4px',
+                        backgroundColor: 'var(--bg-tertiary)',
+                        padding: '4px',
+                        borderRadius: '8px',
+                        border: '1px solid var(--border-primary)',
+                        flexShrink: 0 // 제목이 길어도 스위처가 찌그러지지 않도록
+                    }}>
+                        {(['light', 'dark', 'cypherpunk'] as const).map((t) => (
+                            <button
+                                key={t}
+                                onClick={() => setTheme(t)}
+                                style={{
+                                    padding: '6px 10px',
+                                    borderRadius: '6px',
+                                    border: 'none',
+                                    backgroundColor: theme === t ? 'var(--accent-primary)' : 'transparent',
+                                    color: theme === t ? 'var(--text-inverse)' : 'var(--text-secondary)',
+                                    fontSize: '18px',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }}
+                                title={t}
+                            >
+                                {t === 'light' ? '☀️' : t === 'dark' ? '🌙' : '🕶️'}
+                            </button>
+                        ))}
+                    </div>
+                </div>
                 <p style={{
                     fontSize: '16px',
                     color: 'var(--text-secondary)',
@@ -306,9 +313,9 @@ export default function Home() {
                                     fontSize: '14px',
                                     color: 'var(--text-secondary)'
                                 }}>
-                                    <div>👥 {formatNumber(parseInt(data.channel.subscriber_count || '0'))}</div>
-                                    <div>🎬 {data.channel.video_count}개</div>
-                                    <div>👁️ {formatNumber(parseInt(data.channel.view_count || '0'))}</div>
+                                    <div style={{ whiteSpace: 'nowrap' }}>👥 {formatNumber(parseInt(data.channel.subscriber_count || '0'))}</div>
+                                    <div style={{ whiteSpace: 'nowrap' }}>🎬 {data.channel.video_count}개</div>
+                                    <div style={{ whiteSpace: 'nowrap' }}>👁️ {formatNumber(parseInt(data.channel.view_count || '0'))}</div>
                                 </div>
                             </div>
                         </div>
