@@ -8,55 +8,45 @@
 export interface AllowedChannel {
     id: string;
     name: string;
-    description?: string;
 }
 
 // 채널 목록
 export const ALLOWED_CHANNELS: AllowedChannel[] = [
     {
         id: 'UCKajCwiIKhRieKpvKZmFtHA',
-        name: '지분전쟁⚡️상원수',
-        description: '어둠의 네딸바'
+        name: '지분전쟁⚡️상원수'
     },
     {
         id: 'UC9DUWk8qTAgxeYX0kH0muNw',
-        name: '오렌지캬라멜비트코인',
-        description: '미존개오'
+        name: '오렌지캬라멜비트코인'
     },
     {
         id: 'UC1f_j9wOASvYAvADpwTXT0Q',
-        name: '리스펙',
-        description: '말해뭐해'
+        name: '리스펙'
     },
     {
         id: 'UCYbuSoIMrSja-UsbdSLa_gw',
-        name: '하워드',
-        description: '조곤조곤, 차분'
+        name: '하워드'
     },
     {
         id: 'UCvtSl9-RaZgcd3oE8e88-lw',
-        name: '데드섹',
-        description: '비트코인 지식저장소'
+        name: '데드섹'
     },
     {
         id: 'UCT_RhM-i6or1qS1JRm4Bqrw',
-        name: '네딸바',
-        description: '빛의 상원수'
+        name: '네딸바'
     },
     {
         id: 'UCT745jE-45-ZBvB6zT_7EnA',
-        name: '리버스온',
-        description: '리버스온'
+        name: '리버스온'
     },
     {
         id: 'UC1OxcwoU_Pu5CPoVhrUyDgg',
-        name: 'Buck차는 비트코인',
-        description: ''
+        name: 'Buck차는 비트코인'
     },
     {
         id: 'UCVLrq7pwVPTPHszFNbr8mSA',
-        name: '1분 비트코인',
-        description: ''
+        name: '1분 비트코인'
     },
 ];
 

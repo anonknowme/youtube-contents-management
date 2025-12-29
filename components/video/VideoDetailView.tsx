@@ -8,15 +8,12 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Panel } from '@/components/ui/Panel';
-import { useTheme } from '@/app/providers/ThemeProvider';
-
 interface VideoDetailViewProps {
     videoId: string;
     onBack: () => void;
 }
 
 export function VideoDetailView({ videoId, onBack }: VideoDetailViewProps) {
-    const { theme, setTheme } = useTheme();
 
     const [video, setVideo] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -181,36 +178,6 @@ ${transcript}
                 >
                     ← 뒤로 가기
                 </Button>
-
-                {/* Theme Switcher */}
-                <div style={{
-                    display: 'flex',
-                    gap: '4px',
-                    backgroundColor: 'var(--bg-tertiary)',
-                    padding: '4px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border-primary)'
-                }}>
-                    {(['light', 'dark', 'cypherpunk'] as const).map((t) => (
-                        <button
-                            key={t}
-                            onClick={() => setTheme(t)}
-                            style={{
-                                padding: '6px 10px',
-                                borderRadius: '6px',
-                                border: 'none',
-                                backgroundColor: theme === t ? 'var(--accent-primary)' : 'transparent',
-                                color: theme === t ? 'var(--text-inverse)' : 'var(--text-secondary)',
-                                fontSize: '18px',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s'
-                            }}
-                            title={t === 'light' ? '라이트 모드' : t === 'dark' ? '다크 모드' : '사이버펑크 모드'}
-                        >
-                            {t === 'light' ? '☀️' : t === 'dark' ? '🌙' : '🕶️'}
-                        </button>
-                    ))}
-                </div>
             </div>
 
             {/* Video Player */}
