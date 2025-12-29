@@ -1,0 +1,107 @@
+{
+    "themes": {
+        "light": {
+            "colors": {
+                "background": {
+                    "primary": "#ffffff",
+                    "secondary": "#f4f5f8",
+                    "tertiary": "#e8e9ec",
+                    "glass": "rgba(255, 255, 255, 0.7)",
+                    "glassHover": "rgba(0, 0, 0, 0.03)"
+                },
+                "text": {
+                    "primary": "#18191b",
+                    "secondary": "#5e6066",
+                    "tertiary": "#87888e",
+                    "inverse": "#ffffff"
+                },
+                "accent": {
+                    "primary": "#5e6ad2",
+                    "primaryHover": "#4e5ac0",
+                    "green": "#27a062",
+                    "red": "#d94242",
+                    "orange": "#f2994a"
+                },
+                "border": {
+                    "primary": "rgba(0, 0, 0, 0.1)",
+                    "secondary": "rgba(0, 0, 0, 0.05)",
+                    "active": "rgba(94, 106, 210, 0.5)"
+                },
+                "effects": {
+                    "shadow": "0 2px 8px rgba(0, 0, 0, 0.05)"
+                }
+            }
+        },
+        "dark": {
+            "colors": {
+                "background": {
+                    "primary": "#08090a",
+                    "secondary": "#111214",
+                    "tertiary": "#161718",
+                    "glass": "rgba(255, 255, 255, 0.05)",
+                    "glassHover": "rgba(255, 255, 255, 0.08)"
+                },
+                "text": {
+                    "primary": "#f7f8f8",
+                    "secondary": "#b4b4b8",
+                    "tertiary": "#8a8b91",
+                    "inverse": "#08090a"
+                },
+                "accent": {
+                    "primary": "#5e6ad2",
+                    "primaryHover": "#7170ff",
+                    "green": "#4cb782",
+                    "red": "#eb5757",
+                    "orange": "#fc7840"
+                },
+                "border": {
+                    "primary": "rgba(255, 255, 255, 0.1)",
+                    "secondary": "rgba(255, 255, 255, 0.05)",
+                    "active": "rgba(255, 255, 255, 0.2)"
+                },
+                "effects": {
+                    "shadow": "0 4px 12px rgba(0, 0, 0, 0.5)"
+                }
+            }
+        },
+        "cypherpunk": {
+            "colors": {
+                "background": {
+                    "primary": "#050505",
+                    "secondary": "#0a0a0a",
+                    "tertiary": "#111111",
+                    "glass": "rgba(5, 5, 5, 0.8)",
+                    "glassHover": "rgba(57, 255, 20, 0.05)"
+                },
+                "text": {
+                    "primary": "#39ff14",
+                    "secondary": "rgba(57, 255, 20, 0.7)",
+                    "tertiary": "rgba(57, 255, 20, 0.4)",
+                    "inverse": "#000000"
+                },
+                "accent": {
+                    "primary": "#f7931a",
+                    "primaryHover": "#ffa02e",
+                    "green": "#39ff14",
+                    "red": "#ff3333",
+                    "orange": "#f7931a"
+                },
+                "border": {
+                    "primary": "rgba(57, 255, 20, 0.3)",
+                    "secondary": "rgba(57, 255, 20, 0.1)",
+                    "active": "#39ff14"
+                },
+                "effects": {
+                    "shadow": "0 0 10px rgba(57, 255, 20, 0.2)"
+                }
+            }
+        }
+    },
+    "typography": {
+        "fontFamily": {
+            "sans": "\"Inter\", -apple-system, system-ui, sans-serif",
+            "mono": "\"Berkeley Mono\", \"SF Mono\", monospace"
+        },
+        "baseFontSize": "16px"
+    }
+}

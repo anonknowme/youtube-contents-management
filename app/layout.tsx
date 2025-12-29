@@ -1,4 +1,5 @@
-import type { Metadata } from "next";
+'use client';
+
 import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
@@ -13,11 +14,6 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "유튜브 채널 분석 | YouTube Viral Analysis",
-  description: "유튜브 채널의 바이럴 성과와 영상별 성과를 심층 분석하는 도구입니다. | Analyze viral factor of YouTube channels and videos.",
-};
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -25,6 +21,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <title>유튜브 채널 분석 | YouTube Viral Analysis</title>
+        <meta name="description" content="유튜브 채널의 바이럴 성과와 영상별 성과를 심층 분석하는 도구입니다. | Analyze viral factor of YouTube channels and videos." />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
