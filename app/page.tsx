@@ -12,6 +12,7 @@ import { MediaCard } from '@/components/ui/MediaCard';
 import { Card } from '@/components/ui/Card';
 import { Avatar } from '@/components/ui/Avatar';
 import { useTheme } from '@/app/providers/ThemeProvider';
+import { VideoDetailView } from '@/components/video/VideoDetailView';
 
 export default function Home() {
     const { theme, setTheme } = useTheme();
@@ -24,26 +25,37 @@ export default function Home() {
     const [sortBy, setSortBy] = useState<'viral_high' | 'viral_low' | 'latest'>('viral_high');
     const [allowedChannels, setAllowedChannels] = useState<any[]>([]);
     const [videoType, setVideoType] = useState<'all' | 'regular' | 'shorts'>('all');
+    const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
 
     const searchSectionRef = useRef<HTMLDivElement>(null);
 
-    // Restore state from sessionStorage on mount
+    // Handle browser back button to close modal
     useEffect(() => {
-        const savedState = sessionStorage.getItem('homePageState');
-        if (savedState) {
-            try {
-                const state = JSON.parse(savedState);
-                if (state.data) setData(state.data);
-                if (state.channelId) setChannelId(state.channelId);
-                if (state.sortBy) setSortBy(state.sortBy);
-                if (state.videoType) setVideoType(state.videoType);
-                // Clear the saved state after restoring
-                sessionStorage.removeItem('homePageState');
-            } catch (e) {
-                console.error('Failed to restore state:', e);
+        const handlePopState = () => {
+            // If URL is root, close modal
+            if (window.location.pathname === '/') {
+                setSelectedVideoId(null);
             }
-        }
+        };
+
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
     }, []);
+
+    // Function to open video detail overlay
+    const openVideoDetail = (videoId: string) => {
+        setSelectedVideoId(videoId);
+        // Change URL without navigation
+        window.history.pushState({ videoId }, '', `/video/${videoId}`);
+    };
+
+    // Function to close video detail overlay
+    const closeVideoDetail = () => {
+        setSelectedVideoId(null);
+        // Revert URL
+        window.history.pushState(null, '', '/');
+    };
+
 
     // 허용된 채널 목록 불러오기
     useEffect(() => {
@@ -416,16 +428,7 @@ export default function Home() {
                                             영상 보기
                                         </Button>
                                         <Button
-                                            onClick={() => {
-                                                // Save state before navigating
-                                                sessionStorage.setItem('homePageState', JSON.stringify({
-                                                    data,
-                                                    channelId,
-                                                    sortBy,
-                                                    videoType
-                                                }));
-                                                router.push(`/video/${video.video_id}`);
-                                            }}
+                                            onClick={() => openVideoDetail(video.video_id)}
                                             style={{ flex: 1 }}
                                         >
                                             📊 상세 분석
@@ -436,6 +439,36 @@ export default function Home() {
                         })()}
                     </div>
                 </>
+            )}
+            {/* Video Detail Overlay */}
+            {selectedVideoId && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: 'rgba(0,0,0,0.5)',
+                    zIndex: 1000,
+                    display: 'flex',
+                    justifyContent: 'center',
+                    pointerEvents: 'auto'
+                }} onClick={closeVideoDetail}>
+                    <div style={{
+                        backgroundColor: 'var(--bg-primary)',
+                        width: '100%',
+                        maxWidth: '900px',
+                        height: '100%',
+                        overflowY: 'auto',
+                        boxShadow: '-4px 0 16px rgba(0,0,0,0.1)',
+                        animation: 'slideIn 0.3s ease-out'
+                    }} onClick={e => e.stopPropagation()}>
+                        <VideoDetailView
+                            videoId={selectedVideoId}
+                            onBack={closeVideoDetail}
+                        />
+                    </div>
+                </div>
             )}
         </main>
     );
