@@ -7,6 +7,8 @@ interface MediaCardProps {
     title: string;
     channelName?: string;
     viewCount: string;
+    likeCount?: string;
+    commentCount?: string;
     publishedAt: string;
     viralScore?: number;
     onClick?: () => void;
@@ -18,6 +20,8 @@ export const MediaCard = ({
     title,
     channelName,
     viewCount,
+    likeCount,
+    commentCount,
     publishedAt,
     viralScore,
     onClick,
@@ -28,10 +32,10 @@ export const MediaCard = ({
             className={`card-base ${className}`}
             style={{
                 cursor: onClick ? 'pointer' : 'default',
-                padding: '0', // Reset base padding as we structure manually
+                padding: '0',
                 display: 'flex',
                 flexDirection: 'column',
-                height: '100%' // Full height for grid alignment
+                height: '100%'
             }}
             onClick={onClick}
         >
@@ -66,8 +70,8 @@ export const MediaCard = ({
             {/* Content */}
             <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
                 <h3 style={{
-                    margin: '0 0 8px 0',
-                    fontSize: '16px', // Mobile readability
+                    margin: '0 0 12px 0',
+                    fontSize: '16px',
                     fontWeight: 600,
                     lineHeight: '1.4',
                     color: 'var(--text-primary)',
@@ -79,12 +83,45 @@ export const MediaCard = ({
                     {title}
                 </h3>
 
-                <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '13px', color: 'var(--text-secondary)' }}>
-                    {channelName && <span style={{ color: 'var(--text-tertiary)', fontWeight: 500 }}>{channelName}</span>}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span>{viewCount} views</span>
-                        <span style={{ opacity: 0.7 }}>{publishedAt}</span>
+                {/* Stats Row */}
+                <div style={{
+                    marginTop: 'auto',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px',
+                    fontSize: '15px',
+                    color: 'var(--text-secondary)'
+                }}>
+                    {channelName && (
+                        <span style={{ color: 'var(--text-tertiary)', fontWeight: 500 }}>
+                            {channelName}
+                        </span>
+                    )}
+
+                    {/* View, Like, Comment stats */}
+                    <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <span style={{ opacity: 0.7 }}>👁️</span>
+                            <span>{viewCount}</span>
+                        </span>
+
+                        {likeCount && (
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <span style={{ opacity: 0.7 }}>👍</span>
+                                <span>{likeCount}</span>
+                            </span>
+                        )}
+
+                        {commentCount && (
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <span style={{ opacity: 0.7 }}>💬</span>
+                                <span>{commentCount}</span>
+                            </span>
+                        )}
                     </div>
+
+                    {/* Published date */}
+                    <span style={{ opacity: 0.6, fontSize: '14px' }}>{publishedAt}</span>
                 </div>
             </div>
         </div>

@@ -3,11 +3,52 @@
  */
 
 import { NextResponse } from 'next/server';
-import { getAllowedChannels } from '@/lib/channelConfig';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 export async function GET() {
-    return NextResponse.json({
-        success: true,
-        channels: getAllowedChannels(),
-    });
+    try {
+        console.log('Fetching channels from Supabase...');
+
+        const { data: channels, error } = await supabase
+            .from('channels')
+            .select('channel_id, title, thumbnail_url, subscriber_count')
+            .order('title');
+
+        console.log('Supabase response:', { channels, error });
+
+        if (error) {
+            console.error('Error fetching channels:', error);
+            return NextResponse.json({
+                success: false,
+                error: 'Failed to fetch channels',
+                errorDetails: error.message,
+                channels: []
+            });
+        }
+
+        // 데이터 포맷 변환
+        const formattedChannels = (channels || []).map(ch => ({
+            id: ch.channel_id,
+            name: ch.title,
+            thumbnail_url: ch.thumbnail_url,
+            subscriber_count: ch.subscriber_count
+        }));
+
+        return NextResponse.json({
+            success: true,
+            channels: formattedChannels
+        });
+    } catch (error) {
+        console.error('Error in /api/channels/allowed:', error);
+        return NextResponse.json({
+            success: false,
+            error: 'Internal server error',
+            channels: []
+        });
+    }
 }

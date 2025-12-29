@@ -20,51 +20,57 @@ export const Badge = ({
     switch (variant) {
         case 'success':
             variantStyle = {
-                backgroundColor: 'rgba(57, 255, 20, 0.15)',
-                color: 'var(--accent-green)',
-                border: '1px solid var(--accent-green)',
-                boxShadow: '0 0 5px rgba(57, 255, 20, 0.2)'
+                backgroundColor: 'var(--accent-green)',
+                color: '#000000',
+                border: 'none',
+                fontWeight: 700
             };
             break;
         case 'danger':
             variantStyle = {
-                backgroundColor: 'rgba(255, 51, 51, 0.15)',
-                color: 'var(--accent-red)',
-                border: '1px solid var(--accent-red)'
+                backgroundColor: 'var(--accent-red)',
+                color: '#ffffff',
+                border: 'none',
+                fontWeight: 700
             };
             break;
         case 'warning':
             variantStyle = {
-                backgroundColor: 'rgba(247, 147, 26, 0.15)',
-                color: 'var(--accent-primary)',
-                border: '1px solid var(--accent-primary)'
+                backgroundColor: 'var(--accent-orange)',
+                color: '#000000',
+                border: 'none',
+                fontWeight: 700
             };
             break;
         case 'outline':
             variantStyle = {
-                backgroundColor: 'transparent',
-                border: '1px solid var(--text-secondary)',
-                color: 'var(--text-secondary)'
+                backgroundColor: 'var(--bg-secondary)',
+                border: '2px solid var(--text-secondary)',
+                color: 'var(--text-primary)',
+                fontWeight: 600
             };
             break;
         case 'neon':
             variantStyle = {
                 backgroundColor: 'var(--text-primary)',
-                color: 'black',
-                boxShadow: '0 0 8px var(--text-primary)'
+                color: '#000000',
+                boxShadow: '0 0 8px var(--text-primary)',
+                fontWeight: 700
             };
             break;
         default:
             variantStyle = {
                 backgroundColor: 'var(--bg-tertiary)',
-                color: 'var(--text-secondary)',
-                border: '1px solid var(--border-secondary)'
+                color: 'var(--text-primary)',
+                border: '1px solid var(--border-primary)',
+                fontWeight: 600
             };
     }
 
+    // Increased font sizes for better mobile readability
     const sizeStyle = size === 'sm'
-        ? { fontSize: '10px', padding: '1px 6px' }
-        : { fontSize: '11px', padding: '3px 10px' };
+        ? { fontSize: '13px', padding: '4px 10px' }
+        : { fontSize: '14px', padding: '6px 14px' };
 
     return (
         <span

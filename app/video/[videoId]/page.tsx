@@ -1,13 +1,20 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { formatNumber } from '@/lib/formatNumber';
 import { calculateViralScore, Video } from '@/lib/viralScore';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
+import { Panel } from '@/components/ui/Panel';
+import { useTheme } from '@/app/providers/ThemeProvider';
 
 export default function VideoDetailPage() {
     const params = useParams();
+    const router = useRouter();
+    const { theme, setTheme } = useTheme();
     const videoId = params.videoId as string;
 
     const [video, setVideo] = useState<any>(null);
@@ -167,34 +174,78 @@ ${transcript}
             */}
 
             {/* Header */}
-            <div style={{ marginBottom: '20px' }}>
-                <a href="/" style={{ textDecoration: 'none', color: '#666', fontSize: '14px' }}>
+            <div style={{
+                marginBottom: '20px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+            }}>
+                <Button
+                    variant="secondary"
+                    onClick={() => router.back()}
+                    style={{ padding: '8px 16px', fontSize: '14px' }}
+                >
                     ← 뒤로 가기
-                </a>
+                </Button>
+
+                {/* Theme Switcher */}
+                <div style={{
+                    display: 'flex',
+                    gap: '4px',
+                    backgroundColor: 'var(--bg-tertiary)',
+                    padding: '4px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--border-primary)'
+                }}>
+                    {(['light', 'dark', 'cypherpunk'] as const).map((t) => (
+                        <button
+                            key={t}
+                            onClick={() => setTheme(t)}
+                            style={{
+                                padding: '6px 10px',
+                                borderRadius: '6px',
+                                border: 'none',
+                                backgroundColor: theme === t ? 'var(--accent-primary)' : 'transparent',
+                                color: theme === t ? 'var(--text-inverse)' : 'var(--text-secondary)',
+                                fontSize: '18px',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                            }}
+                            title={t === 'light' ? '라이트 모드' : t === 'dark' ? '다크 모드' : '사이버펑크 모드'}
+                        >
+                            {t === 'light' ? '☀️' : t === 'dark' ? '🌙' : '🕶️'}
+                        </button>
+                    ))}
+                </div>
             </div>
 
             {/* Video Player */}
-            <div style={{
-                position: 'relative',
-                paddingBottom: '56.25%', /* 16:9 ratio */
-                height: 0,
-                backgroundColor: '#000',
-                borderRadius: '12px',
-                overflow: 'hidden',
-                marginBottom: '20px'
-            }}>
-                <iframe
-                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
-                    src={`https://www.youtube.com/embed/${videoId}?autoplay=1`}
-                    title="YouTube video player"
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                />
-            </div>
+            <Card style={{ padding: 0, overflow: 'hidden', marginBottom: '20px' }}>
+                <div style={{
+                    position: 'relative',
+                    paddingBottom: '56.25%', /* 16:9 ratio */
+                    height: 0,
+                    backgroundColor: '#000'
+                }}>
+                    <iframe
+                        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+                        src={`https://www.youtube.com/embed/${videoId}`}
+                        title="YouTube video player"
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                    />
+                </div>
+            </Card>
 
             {/* Title & Stats */}
-            <h1 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '12px', lineHeight: '1.4' }}>
+            <h1 style={{
+                fontSize: '20px',
+                fontWeight: 'bold',
+                marginBottom: '12px',
+                lineHeight: '1.4',
+                color: 'var(--text-primary)'
+            }}>
                 {video.title}
             </h1>
 
@@ -202,11 +253,11 @@ ${transcript}
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                color: '#666',
+                color: 'var(--text-secondary)',
                 fontSize: '14px',
                 marginBottom: '24px',
                 paddingBottom: '16px',
-                borderBottom: '1px solid #eee'
+                borderBottom: '1px solid var(--border-secondary)'
             }}>
                 <div style={{ display: 'flex', gap: '16px' }}>
                     <span>👁️ {formatNumber(video.view_count)}</span>
@@ -219,142 +270,130 @@ ${transcript}
             </div>
 
             {/* Viral Badge */}
-            <div style={{
-                backgroundColor: '#f8f9fa',
-                padding: '20px',
-                borderRadius: '12px',
-                marginBottom: '32px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between'
-            }}>
-                <div>
-                    <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px', color: '#333' }}>
-                        🔥 바이럴 성과 분석
-                    </h3>
-                    <p style={{ margin: 0, color: '#666', fontSize: '14px' }}>
-                        채널 내 최근 영상들의 평균 조회수 대비 성과입니다.
-                    </p>
-                </div>
-                <div style={{
-                    backgroundColor: (video.viral_score || 0) >= 100 ? '#10b981' : '#ef4444',
-                    color: 'white',
-                    padding: '12px 24px',
-                    borderRadius: '50px',
-                    fontWeight: '800',
-                    fontSize: '24px',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                }}>
-                    {(video.viral_score || 0).toFixed(0)}%
-                </div>
+            <div style={{ marginBottom: '32px' }}>
+                <Panel variant="highlighted">
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between'
+                    }}>
+                        <div>
+                            <h3 style={{
+                                margin: '0 0 8px 0',
+                                fontSize: '18px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                color: 'var(--text-primary)'
+                            }}>
+                                🔥 바이럴 성과 분석
+                            </h3>
+                            <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '14px' }}>
+                                채널 내 최근 영상들의 평균 조회수 대비 성과입니다.
+                            </p>
+                        </div>
+                        <Badge
+                            variant={(video.viral_score || 0) >= 100 ? 'success' : 'danger'}
+                            style={{
+                                padding: '12px 24px',
+                                fontSize: '24px',
+                                fontWeight: '800'
+                            }}
+                        >
+                            {(video.viral_score || 0).toFixed(0)}%
+                        </Badge>
+                    </div>
+                </Panel>
             </div>
 
             {/* AI Analysis Section */}
             <div style={{ marginBottom: '40px' }}>
-                <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px' }}>
+                <h2 style={{
+                    fontSize: '18px',
+                    fontWeight: 'bold',
+                    marginBottom: '16px',
+                    color: 'var(--text-primary)'
+                }}>
                     🤖 AI 심층 분석
                 </h2>
 
                 {!aiAnalysis && !aiLoading && (
-                    <div style={{
-                        border: '1px solid #e0e0e0',
-                        borderRadius: '12px',
-                        padding: '30px',
-                        textAlign: 'center',
-                        backgroundColor: '#fff'
-                    }}>
-                        <p style={{ color: '#666', marginBottom: '20px' }}>
-                            영상의 자막을 분석하여<br />
-                            핵심 내용을 요약해드립니다.
-                        </p>
-                        {process.env.NODE_ENV === 'development' ? (
-                            <button
-                                onClick={async () => {
-                                    setAiLoading(true);
-                                    setAiError('');
-                                    try {
-                                        const response = await fetch(`/api/analyze/${videoId}`, {
-                                            method: 'POST'
-                                        });
-                                        const data = await response.json();
-                                        if (data.success) {
-                                            setAiAnalysis(data.data.summary);
-                                        } else {
-                                            setAiError(data.message || 'AI 분석에 실패했습니다.');
-                                        }
-                                    } catch (err) {
-                                        setAiError('AI 분석 중 오류가 발생했습니다.');
-                                    } finally {
-                                        setAiLoading(false);
-                                    }
-                                }}
-                                disabled={aiLoading}
-                                style={{
-                                    background: aiLoading ? '#ccc' : 'linear-gradient(45deg, #2196F3, #21CBF3)',
-                                    color: 'white',
-                                    border: 'none',
-                                    padding: '12px 24px',
-                                    borderRadius: '8px',
-                                    fontSize: '16px',
-                                    fontWeight: 'bold',
-                                    cursor: aiLoading ? 'not-allowed' : 'pointer',
-                                    boxShadow: '0 4px 12px rgba(33, 150, 243, 0.3)'
-                                }}
-                            >
-                                {aiLoading ? '분석 중...' : '✨ AI 분석 시작하기'}
-                            </button>
-                        ) : (
-                            <button
-                                disabled
-                                style={{
-                                    background: '#f5f5f5',
-                                    color: '#999',
-                                    border: '1px solid #ddd',
-                                    padding: '12px 24px',
-                                    borderRadius: '8px',
-                                    fontSize: '16px',
-                                    fontWeight: 'bold',
-                                    cursor: 'not-allowed',
-                                }}
-                            >
-                                🧪 AI 분석 기능 준비 중입니다
-                            </button>
-                        )}
-                        {aiError && (
-                            <p style={{ color: '#f44336', marginTop: '16px', fontSize: '14px' }}>
-                                {aiError}
+                    <Card>
+                        <div style={{ textAlign: 'center', padding: '10px 0' }}>
+                            <p style={{ color: 'var(--text-secondary)', marginBottom: '20px' }}>
+                                영상의 자막을 분석하여<br />
+                                핵심 내용을 요약해드립니다.
                             </p>
-                        )}
-                    </div>
+                            {process.env.NODE_ENV === 'development' ? (
+                                <Button
+                                    onClick={async () => {
+                                        setAiLoading(true);
+                                        setAiError('');
+                                        try {
+                                            const response = await fetch(`/api/analyze/${videoId}`, {
+                                                method: 'POST'
+                                            });
+                                            const data = await response.json();
+                                            if (data.success) {
+                                                setAiAnalysis(data.data.summary);
+                                            } else {
+                                                setAiError(data.message || 'AI 분석에 실패했습니다.');
+                                            }
+                                        } catch (err) {
+                                            setAiError('AI 분석 중 오류가 발생했습니다.');
+                                        } finally {
+                                            setAiLoading(false);
+                                        }
+                                    }}
+                                    disabled={aiLoading}
+                                    variant="primary"
+                                >
+                                    {aiLoading ? '분석 중...' : '✨ AI 분석 시작하기'}
+                                </Button>
+                            ) : (
+                                <Button
+                                    disabled
+                                    variant="secondary"
+                                >
+                                    🧪 AI 분석 기능 준비 중입니다
+                                </Button>
+                            )}
+                            {aiError && (
+                                <p style={{ color: 'var(--status-error)', marginTop: '16px', fontSize: '14px' }}>
+                                    {aiError}
+                                </p>
+                            )}
+                        </div>
+                    </Card>
                 )}
 
                 {aiAnalysis && (
-                    <div style={{
-                        border: '2px solid #2196F3',
-                        borderRadius: '12px',
-                        padding: '24px',
-                        backgroundColor: '#f0f8ff'
-                    }}>
+                    <Panel variant="highlighted">
                         <div style={{
                             display: 'flex',
                             alignItems: 'center',
                             marginBottom: '16px'
                         }}>
                             <span style={{ fontSize: '24px', marginRight: '8px' }}>✨</span>
-                            <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#2196F3', margin: 0 }}>
+                            <h3 style={{
+                                fontSize: '16px',
+                                fontWeight: 'bold',
+                                color: 'var(--accent-primary)',
+                                margin: 0
+                            }}>
                                 AI 분석 결과 (바이럴 인사이트)
                             </h3>
                         </div>
                         <p style={{
                             fontSize: '15px',
                             lineHeight: '1.8',
-                            color: '#333',
+                            color: 'var(--text-primary)',
                             margin: 0,
                             whiteSpace: 'pre-wrap'
                         }}>
                             {aiAnalysis}
                         </p>
-                    </div>
+                    </Panel>
                 )}
             </div>
 
@@ -366,87 +405,70 @@ ${transcript}
                     alignItems: 'center',
                     marginBottom: '12px'
                 }}>
-                    <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0 }}>
+                    <h3 style={{
+                        fontSize: '18px',
+                        fontWeight: 'bold',
+                        margin: 0,
+                        color: 'var(--text-primary)'
+                    }}>
                         📝 상세 정보
                     </h3>
                     {!transcriptLoading && transcript && (
-                        <button
+                        <Button
+                            variant="secondary"
                             onClick={() => {
                                 navigator.clipboard.writeText(fullInfoText);
                                 const btn = document.getElementById('copy-btn');
                                 if (btn) {
                                     const originalText = btn.innerHTML;
                                     btn.innerHTML = '✅ 복사 완료!';
-                                    btn.style.backgroundColor = '#e8f5e9';
-                                    btn.style.borderColor = '#4caf50';
-                                    btn.style.color = '#2e7d32';
-
                                     setTimeout(() => {
                                         btn.innerHTML = originalText;
-                                        btn.style.backgroundColor = '#fff';
-                                        btn.style.borderColor = '#ddd';
-                                        btn.style.color = '#333';
                                     }, 2000);
                                 }
                             }}
                             id="copy-btn"
-                            style={{
-                                padding: '8px 16px',
-                                fontSize: '14px',
-                                fontWeight: '600',
-                                borderRadius: '6px',
-                                border: '1px solid #ddd',
-                                backgroundColor: '#fff',
-                                color: '#333',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '6px',
-                                transition: 'all 0.2s',
-                                boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
-                            }}
+                            style={{ fontSize: '14px', padding: '8px 16px' }}
                         >
                             📋 복사하기
-                        </button>
+                        </Button>
                     )}
                 </div>
                 {transcriptLoading ? (
-                    <div style={{
-                        padding: '40px',
-                        textAlign: 'center',
-                        color: '#666',
-                        backgroundColor: '#f5f5f5',
-                        borderRadius: '12px'
-                    }}>
-                        자막을 불러오는 중...
-                    </div>
+                    <Card>
+                        <div style={{
+                            padding: '40px',
+                            textAlign: 'center',
+                            color: 'var(--text-secondary)'
+                        }}>
+                            자막을 불러오는 중...
+                        </div>
+                    </Card>
                 ) : transcript ? (
-                    <div style={{
-                        whiteSpace: 'pre-wrap',
-                        lineHeight: '1.8',
-                        color: '#333',
-                        backgroundColor: '#f8f9fa',
-                        padding: '24px',
-                        borderRadius: '12px',
-                        fontSize: '15px',
-                        border: '1px solid #eee',
-                        maxHeight: '400px',
-                        overflowY: 'auto',
-                        scrollbarWidth: 'thin',
-                        fontFamily: 'monospace' // 데이터 가독성을 위해 고정폭 글꼴 추천
-                    }}>
-                        {fullInfoText}
-                    </div>
+                    <Card>
+                        <div style={{
+                            whiteSpace: 'pre-wrap',
+                            lineHeight: '1.8',
+                            color: 'var(--text-primary)',
+                            fontSize: '15px',
+                            maxHeight: '400px',
+                            overflowY: 'auto',
+                            scrollbarWidth: 'thin',
+                            fontFamily: 'monospace'
+                        }}>
+                            {fullInfoText}
+                        </div>
+                    </Card>
                 ) : (
-                    <div style={{
-                        padding: '40px',
-                        textAlign: 'center',
-                        color: '#999',
-                        backgroundColor: '#f5f5f5',
-                        borderRadius: '12px'
-                    }}>
-                        자막이 없습니다.
-                    </div>
+                    <Card>
+                        <div style={{
+                            padding: '40px',
+                            textAlign: 'center',
+                            color: 'var(--text-tertiary)'
+                        }}>
+                            자막이 없습니다.
+                        </div>
+                    </Card>
                 )}
             </div>
         </div>

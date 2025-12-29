@@ -1,10 +1,21 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { filterByVideoType } from '@/lib/shortsDetection';
 import { formatNumber } from '@/lib/formatNumber';
+import { AvatarButton } from '@/components/ui/AvatarButton';
+import { SkeletonCard } from '@/components/ui/Skeleton';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
+import { MediaCard } from '@/components/ui/MediaCard';
+import { Card } from '@/components/ui/Card';
+import { Avatar } from '@/components/ui/Avatar';
+import { useTheme } from '@/app/providers/ThemeProvider';
 
 export default function Home() {
+    const { theme, setTheme } = useTheme();
+    const router = useRouter();
     const [channelId, setChannelId] = useState('');
     const [loading, setLoading] = useState(false);
     const [loadingMessage, setLoadingMessage] = useState('로딩 중...');
@@ -13,6 +24,26 @@ export default function Home() {
     const [sortBy, setSortBy] = useState<'viral_high' | 'viral_low' | 'latest'>('viral_high');
     const [allowedChannels, setAllowedChannels] = useState<any[]>([]);
     const [videoType, setVideoType] = useState<'all' | 'regular' | 'shorts'>('all');
+
+    const searchSectionRef = useRef<HTMLDivElement>(null);
+
+    // Restore state from sessionStorage on mount
+    useEffect(() => {
+        const savedState = sessionStorage.getItem('homePageState');
+        if (savedState) {
+            try {
+                const state = JSON.parse(savedState);
+                if (state.data) setData(state.data);
+                if (state.channelId) setChannelId(state.channelId);
+                if (state.sortBy) setSortBy(state.sortBy);
+                if (state.videoType) setVideoType(state.videoType);
+                // Clear the saved state after restoring
+                sessionStorage.removeItem('homePageState');
+            } catch (e) {
+                console.error('Failed to restore state:', e);
+            }
+        }
+    }, []);
 
     // 허용된 채널 목록 불러오기
     useEffect(() => {
@@ -25,8 +56,9 @@ export default function Home() {
             });
     }, []);
 
-    const search = async () => {
-        if (!channelId) return;
+    const search = async (targetChannelId?: string) => {
+        const idToSearch = targetChannelId || channelId;
+        if (!idToSearch) return;
 
         setLoading(true);
         setError('');
@@ -35,7 +67,7 @@ export default function Home() {
         const timer1 = setTimeout(() => setLoadingMessage('⏳ 잠시만 기다려주세요...'), 3000);
 
         try {
-            const res = await fetch(`/api/channel/${channelId}`);
+            const res = await fetch(`/api/channel/${idToSearch}`);
             const json = await res.json();
 
             clearTimeout(timer1);
@@ -66,127 +98,156 @@ export default function Home() {
             padding: '16px',
             maxWidth: '100%',
             minHeight: '100vh',
-            backgroundColor: '#f5f5f5'
+            backgroundColor: 'var(--bg-primary)',
+            transition: 'background-color 0.3s ease'
         }}>
             {/* 헤더 */}
             <div style={{
-                backgroundColor: '#fff',
+                backgroundColor: 'var(--bg-secondary)',
                 padding: '20px 16px',
                 marginBottom: '16px',
                 borderRadius: '12px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                boxShadow: 'var(--shadow-base)',
+                position: 'relative'
             }}>
+                {/* Theme Switcher */}
+                <div style={{
+                    position: 'absolute',
+                    top: '20px',
+                    right: '16px',
+                    display: 'flex',
+                    gap: '4px',
+                    backgroundColor: 'var(--bg-tertiary)',
+                    padding: '4px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--border-primary)'
+                }}>
+                    {(['light', 'dark', 'cypherpunk'] as const).map((t) => (
+                        <button
+                            key={t}
+                            onClick={() => setTheme(t)}
+                            style={{
+                                padding: '6px 10px',
+                                borderRadius: '6px',
+                                border: 'none',
+                                backgroundColor: theme === t ? 'var(--accent-primary)' : 'transparent',
+                                color: theme === t ? 'var(--text-inverse)' : 'var(--text-secondary)',
+                                fontSize: '18px',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                            }}
+                            title={t}
+                        >
+                            {t === 'light' ? '☀️' : t === 'dark' ? '🌙' : '🕶️'}
+                        </button>
+                    ))}
+                </div>
+
                 <h1 style={{
-                    fontSize: '24px',
+                    fontSize: '28px',
                     margin: '0 0 8px 0',
                     fontWeight: 'bold',
-                    color: '#1a1a1a'
+                    color: 'var(--text-primary)',
+                    letterSpacing: '-0.5px'
                 }}>
-                    📊 YouTube 채널 분석
+                    유튜브 영상 바이럴 분석
                 </h1>
                 <p style={{
-                    fontSize: '14px',
-                    color: '#4a4a4a',
-                    margin: 0
+                    fontSize: '16px',
+                    color: 'var(--text-secondary)',
+                    margin: 0,
+                    fontWeight: 500
                 }}>
-                    채널의 바이럴 영상을 분석해보세요
+                    잘 터진 오렌지필🍊💊영상! 데이터로 확인📊
                 </p>
             </div>
 
             {/* 빠른 선택 */}
             {allowedChannels.length > 0 && (
                 <div style={{
-                    backgroundColor: '#fff',
-                    padding: '16px',
+                    backgroundColor: 'var(--bg-secondary)',
+                    padding: '20px',
                     marginBottom: '16px',
                     borderRadius: '12px',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                    boxShadow: 'var(--shadow-base)'
                 }}>
                     <p style={{
-                        fontSize: '13px',
+                        fontSize: '16px',
                         fontWeight: 'bold',
-                        marginBottom: '12px',
-                        color: '#1a1a1a'
+                        marginBottom: '16px',
+                        color: 'var(--text-primary)'
                     }}>
                         빠른 선택
                     </p>
                     <div style={{
                         display: 'grid',
-                        gridTemplateColumns: 'repeat(2, 1fr)',
-                        gap: '8px'
+                        gridTemplateColumns: '1fr',
+                        gap: '12px'
                     }}>
                         {allowedChannels.map(ch => (
-                            <button
+                            <AvatarButton
                                 key={ch.id}
-                                onClick={() => setChannelId(ch.id)}
-                                disabled={loading}
-                                style={{
-                                    padding: '12px 8px',
-                                    fontSize: '14px',
-                                    backgroundColor: channelId === ch.id ? '#0070f3' : '#f0f0f0',
-                                    color: channelId === ch.id ? '#fff' : '#333',
-                                    border: 'none',
-                                    borderRadius: '8px',
-                                    cursor: loading ? 'not-allowed' : 'pointer',
-                                    fontWeight: channelId === ch.id ? 'bold' : 'normal',
-                                    transition: 'all 0.2s',
-                                    opacity: loading ? 0.5 : 1
+                                src={ch.thumbnail_url}
+                                alt={ch.name}
+                                label={ch.name}
+                                subtitle={ch.subscriber_count ? `구독자 ${formatNumber(ch.subscriber_count)}` : undefined}
+                                onClick={() => {
+                                    if (!loading) {
+                                        search(ch.id);
+                                        // Scroll to search section
+                                        setTimeout(() => {
+                                            searchSectionRef.current?.scrollIntoView({
+                                                behavior: 'smooth',
+                                                block: 'start'
+                                            });
+                                        }, 100);
+                                    }
                                 }}
-                            >
-                                {ch.name}
-                            </button>
+                            />
                         ))}
                     </div>
                 </div>
             )}
 
             {/* 검색 */}
-            <div style={{
-                backgroundColor: '#fff',
-                padding: '16px',
-                marginBottom: '16px',
-                borderRadius: '12px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-            }}>
-                <input
+            <div
+                ref={searchSectionRef}
+                style={{
+                    backgroundColor: 'var(--bg-secondary)',
+                    padding: '20px',
+                    marginBottom: '16px',
+                    borderRadius: '12px',
+                    boxShadow: 'var(--shadow-base)'
+                }}>
+                <Input
                     type="text"
                     value={channelId}
                     onChange={(e) => setChannelId(e.target.value)}
                     placeholder="또는 채널 ID 직접 입력"
                     disabled={loading}
-                    style={{
-                        padding: '14px',
-                        fontSize: '16px',
-                        width: '100%',
-                        border: '2px solid #e0e0e0',
-                        borderRadius: '8px',
-                        marginBottom: '12px',
-                        boxSizing: 'border-box',
-                        opacity: loading ? 0.5 : 1,
-                        cursor: loading ? 'not-allowed' : 'text',
-                        color: '#1a1a1a', // Force dark text
-                        backgroundColor: '#fff' // Ensure white background
-                    }}
                     onKeyPress={(e) => e.key === 'Enter' && !loading && search()}
                 />
-                <button
-                    onClick={search}
+                <Button
+                    onClick={() => search()}
                     disabled={loading}
-                    style={{
-                        padding: '14px',
-                        fontSize: '16px',
-                        fontWeight: 'bold',
-                        width: '100%',
-                        backgroundColor: loading ? '#ccc' : '#0070f3',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '8px',
-                        cursor: loading ? 'not-allowed' : 'pointer',
-                        transition: 'background-color 0.2s'
-                    }}
+                    style={{ marginTop: '12px', width: '100%' }}
                 >
                     {loading ? loadingMessage : '검색'}
-                </button>
+                </Button>
+
+                {/* Loading skeleton - ensures page has enough height and shows loading state */}
+                {loading && !data && (
+                    <div style={{
+                        marginTop: '24px',
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                        gap: '16px'
+                    }}>
+                        {Array.from({ length: 6 }).map((_, i) => (
+                            <SkeletonCard key={i} />
+                        ))}
+                    </div>
+                )}
             </div>
 
             {/* 에러 */}
@@ -207,41 +268,31 @@ export default function Home() {
             {data && (
                 <>
                     {/* 채널 정보 */}
-                    <div style={{
-                        backgroundColor: '#fff',
-                        padding: '20px',
-                        marginBottom: '16px',
-                        borderRadius: '12px',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                    }}>
-                        <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
-                            <img
+                    <Card>
+                        <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+                            <Avatar
                                 src={data.channel.thumbnail_url}
-                                style={{
-                                    width: '60px',
-                                    height: '60px',
-                                    borderRadius: '50%',
-                                    flexShrink: 0
-                                }}
+                                alt={data.channel.title}
+                                size="lg"
                             />
                             <div style={{ flex: 1, minWidth: 0 }}>
                                 <h3 style={{
                                     fontSize: '18px',
-                                    margin: '0 0 8px 0',
+                                    margin: '0 0 12px 0',
                                     fontWeight: 'bold',
                                     overflow: 'hidden',
                                     textOverflow: 'ellipsis',
                                     whiteSpace: 'nowrap',
-                                    color: '#1a1a1a'
+                                    color: 'var(--text-primary)'
                                 }}>
                                     {data.channel.title}
                                 </h3>
                                 <div style={{
                                     display: 'grid',
                                     gridTemplateColumns: 'repeat(3, 1fr)',
-                                    gap: '8px',
-                                    fontSize: '12px',
-                                    color: '#4a4a4a'
+                                    gap: '12px',
+                                    fontSize: '14px',
+                                    color: 'var(--text-secondary)'
                                 }}>
                                     <div>👥 {formatNumber(parseInt(data.channel.subscriber_count || '0'))}</div>
                                     <div>🎬 {data.channel.video_count}개</div>
@@ -249,21 +300,15 @@ export default function Home() {
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </Card>
 
                     {/* 필터 */}
-                    <div style={{
-                        backgroundColor: '#fff',
-                        padding: '16px',
-                        marginBottom: '16px',
-                        borderRadius: '12px',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                    }}>
+                    <Card>
                         <p style={{
-                            fontSize: '14px',
+                            fontSize: '16px',
                             fontWeight: 'bold',
-                            marginBottom: '12px',
-                            color: '#1a1a1a'
+                            marginBottom: '16px',
+                            color: 'var(--text-primary)'
                         }}>
                             영상 목록 ({filterByVideoType(data.videos || [], videoType).length}개)
                         </p>
@@ -272,114 +317,70 @@ export default function Home() {
                         <div style={{
                             display: 'grid',
                             gridTemplateColumns: 'repeat(3, 1fr)',
-                            gap: '6px',
-                            marginBottom: '12px'
+                            gap: '8px',
+                            marginBottom: '16px'
                         }}>
-                            <button
+                            <Button
+                                variant={videoType === 'all' ? 'primary' : 'secondary'}
                                 onClick={() => setVideoType('all')}
-                                style={{
-                                    padding: '10px 8px',
-                                    fontSize: '13px',
-                                    backgroundColor: videoType === 'all' ? '#555' : '#f0f0f0',
-                                    color: videoType === 'all' ? '#fff' : '#333',
-                                    border: 'none',
-                                    borderRadius: '6px',
-                                    cursor: 'pointer',
-                                    fontWeight: videoType === 'all' ? 'bold' : 'normal'
-                                }}
+                                style={{ width: '100%' }}
                             >
                                 전체
-                            </button>
-                            <button
+                            </Button>
+                            <Button
+                                variant={videoType === 'regular' ? 'primary' : 'secondary'}
                                 onClick={() => setVideoType('regular')}
-                                style={{
-                                    padding: '10px 8px',
-                                    fontSize: '13px',
-                                    backgroundColor: videoType === 'regular' ? '#555' : '#f0f0f0',
-                                    color: videoType === 'regular' ? '#fff' : '#333',
-                                    border: 'none',
-                                    borderRadius: '6px',
-                                    cursor: 'pointer',
-                                    fontWeight: videoType === 'regular' ? 'bold' : 'normal'
-                                }}
+                                style={{ width: '100%' }}
                             >
                                 📹 일반
-                            </button>
-                            <button
+                            </Button>
+                            <Button
+                                variant={videoType === 'shorts' ? 'primary' : 'secondary'}
                                 onClick={() => setVideoType('shorts')}
-                                style={{
-                                    padding: '10px 8px',
-                                    fontSize: '13px',
-                                    backgroundColor: videoType === 'shorts' ? '#555' : '#f0f0f0',
-                                    color: videoType === 'shorts' ? '#fff' : '#333',
-                                    border: 'none',
-                                    borderRadius: '6px',
-                                    cursor: 'pointer',
-                                    fontWeight: videoType === 'shorts' ? 'bold' : 'normal'
-                                }}
+                                style={{ width: '100%' }}
                             >
                                 🎬 Shorts
-                            </button>
+                            </Button>
                         </div>
 
                         {/* 정렬 */}
                         <div style={{
                             display: 'grid',
                             gridTemplateColumns: 'repeat(3, 1fr)',
-                            gap: '6px'
+                            gap: '8px'
                         }}>
-                            <button
+                            <Button
+                                variant={sortBy === 'viral_high' ? 'primary' : 'secondary'}
                                 onClick={() => setSortBy('viral_high')}
-                                style={{
-                                    padding: '10px 8px',
-                                    fontSize: '12px',
-                                    backgroundColor: sortBy === 'viral_high' ? '#0070f3' : '#f0f0f0',
-                                    color: sortBy === 'viral_high' ? '#fff' : '#333',
-                                    border: 'none',
-                                    borderRadius: '6px',
-                                    cursor: 'pointer',
-                                    fontWeight: sortBy === 'viral_high' ? 'bold' : 'normal'
-                                }}
+                                style={{ width: '100%' }}
                             >
                                 🔥 높음
-                            </button>
-                            <button
+                            </Button>
+                            <Button
+                                variant={sortBy === 'viral_low' ? 'primary' : 'secondary'}
                                 onClick={() => setSortBy('viral_low')}
-                                style={{
-                                    padding: '10px 8px',
-                                    fontSize: '12px',
-                                    backgroundColor: sortBy === 'viral_low' ? '#0070f3' : '#f0f0f0',
-                                    color: sortBy === 'viral_low' ? '#fff' : '#333',
-                                    border: 'none',
-                                    borderRadius: '6px',
-                                    cursor: 'pointer',
-                                    fontWeight: sortBy === 'viral_low' ? 'bold' : 'normal'
-                                }}
+                                style={{ width: '100%' }}
                             >
                                 📉 낮음
-                            </button>
-                            <button
+                            </Button>
+                            <Button
+                                variant={sortBy === 'latest' ? 'primary' : 'secondary'}
                                 onClick={() => setSortBy('latest')}
-                                style={{
-                                    padding: '10px 8px',
-                                    fontSize: '12px',
-                                    backgroundColor: sortBy === 'latest' ? '#0070f3' : '#f0f0f0',
-                                    color: sortBy === 'latest' ? '#fff' : '#333',
-                                    border: 'none',
-                                    borderRadius: '6px',
-                                    cursor: 'pointer',
-                                    fontWeight: sortBy === 'latest' ? 'bold' : 'normal'
-                                }}
+                                style={{ width: '100%' }}
                             >
                                 📅 최신
-                            </button>
+                            </Button>
                         </div>
-                    </div>
+                    </Card>
 
                     {/* 영상 목록 */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+                        gap: '20px'
+                    }}>
                         {(() => {
-                            // 타입 필터링 (새로운 헬퍼 함수 사용)
+                            // 타입 필터링
                             let filteredVideos = filterByVideoType(data.videos || [], videoType);
 
                             if (sortBy === 'viral_high') {
@@ -395,109 +396,40 @@ export default function Home() {
                             }
 
                             return filteredVideos.map((video: any) => (
-                                <div
-                                    key={video.id}
-                                    style={{
-                                        backgroundColor: '#fff',
-                                        borderRadius: '12px',
-                                        overflow: 'hidden',
-                                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                                    }}
-                                >
-                                    <div style={{ position: 'relative' }}>
-                                        <img
-                                            src={video.thumbnail_url}
-                                            style={{
-                                                width: '100%',
-                                                aspectRatio: '16/9',
-                                                objectFit: 'cover',
-                                                display: 'block'
+                                <div key={video.id} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                    <MediaCard
+                                        thumbnailUrl={video.thumbnail_url}
+                                        title={video.title}
+                                        channelName={data.channel.title}
+                                        viewCount={formatNumber(video.view_count)}
+                                        likeCount={formatNumber(video.like_count)}
+                                        commentCount={formatNumber(video.comment_count)}
+                                        publishedAt={new Date(video.published_at).toLocaleDateString('ko-KR')}
+                                        viralScore={video.viral_score}
+                                    />
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                        <Button
+                                            variant="secondary"
+                                            onClick={() => window.open(video.url, '_blank')}
+                                            style={{ flex: 1 }}
+                                        >
+                                            영상 보기
+                                        </Button>
+                                        <Button
+                                            onClick={() => {
+                                                // Save state before navigating
+                                                sessionStorage.setItem('homePageState', JSON.stringify({
+                                                    data,
+                                                    channelId,
+                                                    sortBy,
+                                                    videoType
+                                                }));
+                                                router.push(`/video/${video.video_id}`);
                                             }}
-                                        />
-                                        {video.viral_score && (
-                                            <div style={{
-                                                position: 'absolute',
-                                                top: '10px',
-                                                right: '10px',
-                                                backgroundColor: video.viral_score > 100 ? '#10b981' : '#ef4444',
-                                                color: 'white',
-                                                padding: '8px 12px',
-                                                borderRadius: '8px',
-                                                fontSize: '13px',
-                                                fontWeight: 'bold',
-                                                boxShadow: '0 3px 10px rgba(0,0,0,0.4)',
-                                                lineHeight: '1.3',
-                                                textAlign: 'center'
-                                            }}>
-                                                바이럴 점수<br />
-                                                {video.viral_score.toFixed(0)}%
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div style={{ padding: '12px' }}>
-                                        <h4 style={{
-                                            fontSize: '14px',
-                                            margin: '0 0 8px 0',
-                                            lineHeight: '1.4',
-                                            fontWeight: '600',
-                                            color: '#1a1a1a',
-                                            display: '-webkit-box',
-                                            WebkitLineClamp: 2,
-                                            WebkitBoxOrient: 'vertical',
-                                            overflow: 'hidden'
-                                        }}>
-                                            {video.title}
-                                        </h4>
-                                        <div style={{
-                                            display: 'grid',
-                                            gridTemplateColumns: 'repeat(2, 1fr)',
-                                            gap: '8px',
-                                            fontSize: '12px',
-                                            color: '#4a4a4a',
-                                            marginBottom: '12px'
-                                        }}>
-                                            <div>👁️ {formatNumber(video.view_count)}</div>
-                                            <div>👍 {formatNumber(video.like_count)}</div>
-                                        </div>
-
-                                        <div style={{ display: 'flex', gap: '8px' }}>
-                                            <a
-                                                href={video.url}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                style={{
-                                                    flex: 1,
-                                                    display: 'block',
-                                                    padding: '8px 0',
-                                                    backgroundColor: '#f0f0f0',
-                                                    color: '#333',
-                                                    textDecoration: 'none',
-                                                    borderRadius: '4px',
-                                                    textAlign: 'center',
-                                                    fontSize: '13px',
-                                                    fontWeight: '500'
-                                                }}
-                                            >
-                                                영상 보기
-                                            </a>
-                                            <a
-                                                href={`/video/${video.video_id}`}
-                                                style={{
-                                                    flex: 1,
-                                                    display: 'block',
-                                                    padding: '8px 0',
-                                                    backgroundColor: '#e6f0ff',
-                                                    color: '#0066cc',
-                                                    textDecoration: 'none',
-                                                    borderRadius: '4px',
-                                                    textAlign: 'center',
-                                                    fontSize: '13px',
-                                                    fontWeight: '500'
-                                                }}
-                                            >
-                                                📊 상세 분석
-                                            </a>
-                                        </div>
+                                            style={{ flex: 1 }}
+                                        >
+                                            📊 상세 분석
+                                        </Button>
                                     </div>
                                 </div>
                             ));
