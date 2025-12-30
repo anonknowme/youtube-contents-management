@@ -9,33 +9,30 @@ interface LightningDonateButtonProps {
     variant?: 'icon' | 'button';
 }
 
+// 지원 지갑 목록
+const WALLETS = [
+    { name: 'Wallet of Satoshi', scheme: 'walletofsatoshi:', icon: '💰' },
+    { name: 'Blink', scheme: 'blink:', icon: '⚡' },
+    { name: 'Speed Wallet', scheme: 'speedwallet:', icon: '🚀' },
+    { name: 'Strike', scheme: 'strike:', icon: '⚡' },
+    { name: 'Zeus', scheme: 'zeusln:', icon: '⚡' },
+];
+
 export const LightningDonateButton = ({
     size = 'md',
     variant = 'button'
 }: LightningDonateButtonProps) => {
     const [showModal, setShowModal] = useState(false);
 
-    // 모바일 감지
-    const isMobile = () => {
-        if (typeof window === 'undefined') return false;
-        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const handleDonate = () => {
+        // 모바일/데스크톱 모두 모달 표시
+        setShowModal(true);
     };
 
-    const handleDonate = () => {
-        const lightningUrl = `lightning:${LIGHTNING_ADDRESS}`;
-
-        if (isMobile()) {
-            // 모바일: 지갑 앱 실행 시도
-            window.location.href = lightningUrl;
-
-            // 1초 후에도 페이지가 그대로면 QR 코드 표시
-            setTimeout(() => {
-                setShowModal(true);
-            }, 1000);
-        } else {
-            // 데스크톱: QR 코드 모달 표시
-            setShowModal(true);
-        }
+    const openWallet = (scheme: string) => {
+        const lightningUrl = `${scheme}lightning:${LIGHTNING_ADDRESS}`;
+        window.location.href = lightningUrl;
+        // 모달은 닫지 않음 - 사용자가 직접 닫거나 앱이 열리면 자동으로 백그라운드로
     };
 
     const sizeStyles = {
@@ -110,7 +107,7 @@ export const LightningDonateButton = ({
                 </button>
             )}
 
-            {/* QR Code Modal */}
+            {/* Wallet Selection Modal */}
             {showModal && (
                 <div
                     style={{
@@ -143,7 +140,7 @@ export const LightningDonateButton = ({
                         <h2 style={{
                             fontSize: '24px',
                             fontWeight: 'bold',
-                            marginBottom: '16px',
+                            marginBottom: '8px',
                             color: 'var(--text-primary)'
                         }}>
                             ⚡ 라이트닝 후원
@@ -157,45 +154,102 @@ export const LightningDonateButton = ({
                             {DONATION_MESSAGE}
                         </p>
 
-                        {/* QR Code */}
+                        {/* Wallet Buttons */}
                         <div style={{
-                            backgroundColor: 'white',
-                            padding: '20px',
-                            borderRadius: '12px',
-                            display: 'inline-block',
-                            marginBottom: '20px'
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '12px',
+                            marginBottom: '24px'
                         }}>
-                            <QRCodeSVG
-                                value={`lightning:${LIGHTNING_ADDRESS}`}
-                                size={200}
-                                level="H"
-                                includeMargin={false}
-                            />
+                            {WALLETS.map((wallet) => (
+                                <button
+                                    key={wallet.name}
+                                    onClick={() => openWallet(wallet.scheme)}
+                                    style={{
+                                        backgroundColor: 'var(--bg-secondary)',
+                                        border: '1px solid var(--border-primary)',
+                                        borderRadius: '12px',
+                                        padding: '16px',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '12px',
+                                        transition: 'all 0.2s ease',
+                                        width: '100%'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)';
+                                        e.currentTarget.style.transform = 'translateX(4px)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.backgroundColor = 'var(--bg-secondary)';
+                                        e.currentTarget.style.transform = 'translateX(0)';
+                                    }}
+                                >
+                                    <span style={{ fontSize: '24px' }}>{wallet.icon}</span>
+                                    <span style={{
+                                        fontSize: '16px',
+                                        fontWeight: '600',
+                                        color: 'var(--text-primary)',
+                                        textAlign: 'left'
+                                    }}>
+                                        {wallet.name}
+                                    </span>
+                                </button>
+                            ))}
                         </div>
 
-                        {/* Lightning Address */}
+                        {/* QR Code Section */}
                         <div style={{
-                            backgroundColor: 'var(--bg-secondary)',
-                            padding: '12px 16px',
-                            borderRadius: '8px',
-                            marginBottom: '20px',
-                            wordBreak: 'break-all'
+                            borderTop: '1px solid var(--border-secondary)',
+                            paddingTop: '24px',
+                            marginBottom: '20px'
                         }}>
                             <p style={{
                                 fontSize: '12px',
                                 color: 'var(--text-tertiary)',
-                                marginBottom: '4px'
+                                marginBottom: '16px'
                             }}>
-                                Lightning Address
+                                또는 QR 코드로 스캔
                             </p>
-                            <p style={{
-                                fontSize: '14px',
-                                fontWeight: '600',
-                                color: 'var(--text-primary)',
-                                fontFamily: 'monospace'
+                            <div style={{
+                                backgroundColor: 'white',
+                                padding: '16px',
+                                borderRadius: '12px',
+                                display: 'inline-block',
+                                marginBottom: '16px'
                             }}>
-                                {LIGHTNING_ADDRESS}
-                            </p>
+                                <QRCodeSVG
+                                    value={`lightning:${LIGHTNING_ADDRESS}`}
+                                    size={160}
+                                    level="H"
+                                    includeMargin={false}
+                                />
+                            </div>
+
+                            {/* Lightning Address */}
+                            <div style={{
+                                backgroundColor: 'var(--bg-secondary)',
+                                padding: '12px 16px',
+                                borderRadius: '8px',
+                                wordBreak: 'break-all'
+                            }}>
+                                <p style={{
+                                    fontSize: '11px',
+                                    color: 'var(--text-tertiary)',
+                                    marginBottom: '4px'
+                                }}>
+                                    Lightning Address
+                                </p>
+                                <p style={{
+                                    fontSize: '13px',
+                                    fontWeight: '600',
+                                    color: 'var(--text-primary)',
+                                    fontFamily: 'monospace'
+                                }}>
+                                    {LIGHTNING_ADDRESS}
+                                </p>
+                            </div>
                         </div>
 
                         <button
