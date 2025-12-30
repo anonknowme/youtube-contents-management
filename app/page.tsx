@@ -13,6 +13,7 @@ import { Card } from '@/components/ui/Card';
 import { Avatar } from '@/components/ui/Avatar';
 import { useTheme } from '@/app/providers/ThemeProvider';
 import { VideoDetailView } from '@/components/video/VideoDetailView';
+import { LightningDonateButton } from '@/components/ui/LightningDonateButton';
 
 export default function Home() {
     const { theme, setTheme } = useTheme();
@@ -558,6 +559,16 @@ export default function Home() {
                     </div>
                 </div>
             )}
+
+            {/* Floating Lightning Donate Button */}
+            <div style={{
+                position: 'fixed',
+                bottom: '24px',
+                left: '24px',
+                zIndex: 1000
+            }}>
+                <LightningDonateButton variant="icon" />
+            </div>
         </main>
     );
 }
