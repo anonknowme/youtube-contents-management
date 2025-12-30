@@ -76,7 +76,7 @@ export default function Home() {
         if (!idToSearch) return;
 
         setLoading(true);
-        setLoading(true);
+        setData(null); // 기존 데이터 초기화 → 스켈레톤 표시
         setError('');
         setSyncRequiredChannelId(null);
         setLoadingMessage('🔍 채널 확인 중...');
