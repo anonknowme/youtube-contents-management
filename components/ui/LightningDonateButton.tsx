@@ -129,152 +129,171 @@ export const LightningDonateButton = ({
                         style={{
                             backgroundColor: 'var(--bg-primary)',
                             borderRadius: '16px',
-                            padding: '32px',
                             maxWidth: '400px',
                             width: '100%',
+                            maxHeight: '90vh',
+                            display: 'flex',
+                            flexDirection: 'column',
                             boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
-                            textAlign: 'center'
+                            position: 'relative'
                         }}
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <h2 style={{
-                            fontSize: '24px',
-                            fontWeight: 'bold',
-                            marginBottom: '8px',
-                            color: 'var(--text-primary)'
-                        }}>
-                            ⚡ 라이트닝 후원
-                        </h2>
-
-                        <p style={{
-                            fontSize: '14px',
-                            color: 'var(--text-secondary)',
-                            marginBottom: '24px'
-                        }}>
-                            {DONATION_MESSAGE}
-                        </p>
-
-                        {/* Wallet Buttons */}
-                        <div style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '12px',
-                            marginBottom: '24px'
-                        }}>
-                            {WALLETS.map((wallet) => (
-                                <button
-                                    key={wallet.name}
-                                    onClick={() => openWallet(wallet.scheme)}
-                                    style={{
-                                        backgroundColor: 'var(--bg-secondary)',
-                                        border: '1px solid var(--border-primary)',
-                                        borderRadius: '12px',
-                                        padding: '16px',
-                                        cursor: 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '12px',
-                                        transition: 'all 0.2s ease',
-                                        width: '100%'
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)';
-                                        e.currentTarget.style.transform = 'translateX(4px)';
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.backgroundColor = 'var(--bg-secondary)';
-                                        e.currentTarget.style.transform = 'translateX(0)';
-                                    }}
-                                >
-                                    <span style={{ fontSize: '24px' }}>{wallet.icon}</span>
-                                    <span style={{
-                                        fontSize: '16px',
-                                        fontWeight: '600',
-                                        color: 'var(--text-primary)',
-                                        textAlign: 'left'
-                                    }}>
-                                        {wallet.name}
-                                    </span>
-                                </button>
-                            ))}
-                        </div>
-
-                        {/* QR Code Section */}
-                        <div style={{
-                            borderTop: '1px solid var(--border-secondary)',
-                            paddingTop: '24px',
-                            marginBottom: '20px'
-                        }}>
-                            <p style={{
-                                fontSize: '12px',
-                                color: 'var(--text-tertiary)',
-                                marginBottom: '16px'
-                            }}>
-                                또는 QR 코드로 스캔
-                            </p>
-                            <div style={{
-                                backgroundColor: 'white',
-                                padding: '16px',
-                                borderRadius: '12px',
-                                display: 'inline-block',
-                                marginBottom: '16px'
-                            }}>
-                                <QRCodeSVG
-                                    value={`lightning:${LIGHTNING_ADDRESS}`}
-                                    size={160}
-                                    level="H"
-                                    includeMargin={false}
-                                />
-                            </div>
-
-                            {/* Lightning Address */}
-                            <div style={{
-                                backgroundColor: 'var(--bg-secondary)',
-                                padding: '12px 16px',
-                                borderRadius: '8px',
-                                wordBreak: 'break-all'
-                            }}>
-                                <p style={{
-                                    fontSize: '11px',
-                                    color: 'var(--text-tertiary)',
-                                    marginBottom: '4px'
-                                }}>
-                                    Lightning Address
-                                </p>
-                                <p style={{
-                                    fontSize: '13px',
-                                    fontWeight: '600',
-                                    color: 'var(--text-primary)',
-                                    fontFamily: 'monospace'
-                                }}>
-                                    {LIGHTNING_ADDRESS}
-                                </p>
-                            </div>
-                        </div>
-
+                        {/* Close Button */}
                         <button
                             onClick={() => setShowModal(false)}
                             style={{
-                                backgroundColor: 'var(--bg-tertiary)',
-                                color: 'var(--text-primary)',
+                                position: 'absolute',
+                                top: '16px',
+                                right: '16px',
+                                background: 'var(--bg-tertiary)',
                                 border: '1px solid var(--border-primary)',
-                                borderRadius: '8px',
-                                padding: '10px 20px',
-                                fontSize: '14px',
-                                fontWeight: '600',
+                                borderRadius: '50%',
+                                width: '32px',
+                                height: '32px',
                                 cursor: 'pointer',
-                                width: '100%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '18px',
+                                color: 'var(--text-secondary)',
+                                zIndex: 1,
                                 transition: 'all 0.2s ease'
                             }}
                             onMouseEnter={(e) => {
                                 e.currentTarget.style.backgroundColor = 'var(--bg-secondary)';
+                                e.currentTarget.style.color = 'var(--text-primary)';
                             }}
                             onMouseLeave={(e) => {
                                 e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)';
+                                e.currentTarget.style.color = 'var(--text-secondary)';
                             }}
                         >
-                            닫기
+                            ✕
                         </button>
+
+                        {/* Scrollable Content */}
+                        <div style={{
+                            padding: '32px',
+                            overflowY: 'auto',
+                            textAlign: 'center'
+                        }}>
+                            <h2 style={{
+                                fontSize: '24px',
+                                fontWeight: 'bold',
+                                marginBottom: '8px',
+                                color: 'var(--text-primary)',
+                                paddingRight: '32px'
+                            }}>
+                                ⚡ 라이트닝 후원
+                            </h2>
+
+                            <p style={{
+                                fontSize: '14px',
+                                color: 'var(--text-secondary)',
+                                marginBottom: '24px'
+                            }}>
+                                {DONATION_MESSAGE}
+                            </p>
+
+                            {/* Wallet Buttons */}
+                            <div style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '12px',
+                                marginBottom: '24px'
+                            }}>
+                                {WALLETS.map((wallet) => (
+                                    <button
+                                        key={wallet.name}
+                                        onClick={() => openWallet(wallet.scheme)}
+                                        style={{
+                                            backgroundColor: 'var(--bg-secondary)',
+                                            border: '1px solid var(--border-primary)',
+                                            borderRadius: '12px',
+                                            padding: '16px',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '12px',
+                                            transition: 'all 0.2s ease',
+                                            width: '100%'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)';
+                                            e.currentTarget.style.transform = 'translateX(4px)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.backgroundColor = 'var(--bg-secondary)';
+                                            e.currentTarget.style.transform = 'translateX(0)';
+                                        }}
+                                    >
+                                        <span style={{ fontSize: '24px' }}>{wallet.icon}</span>
+                                        <span style={{
+                                            fontSize: '16px',
+                                            fontWeight: '600',
+                                            color: 'var(--text-primary)',
+                                            textAlign: 'left'
+                                        }}>
+                                            {wallet.name}
+                                        </span>
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* QR Code Section */}
+                            <div style={{
+                                borderTop: '1px solid var(--border-secondary)',
+                                paddingTop: '24px',
+                                marginBottom: '20px'
+                            }}>
+                                <p style={{
+                                    fontSize: '12px',
+                                    color: 'var(--text-tertiary)',
+                                    marginBottom: '16px'
+                                }}>
+                                    또는 QR 코드로 스캔
+                                </p>
+                                <div style={{
+                                    backgroundColor: 'white',
+                                    padding: '16px',
+                                    borderRadius: '12px',
+                                    display: 'inline-block',
+                                    marginBottom: '16px'
+                                }}>
+                                    <QRCodeSVG
+                                        value={`lightning:${LIGHTNING_ADDRESS}`}
+                                        size={160}
+                                        level="H"
+                                        includeMargin={false}
+                                    />
+                                </div>
+
+                                {/* Lightning Address */}
+                                <div style={{
+                                    backgroundColor: 'var(--bg-secondary)',
+                                    padding: '12px 16px',
+                                    borderRadius: '8px',
+                                    wordBreak: 'break-all'
+                                }}>
+                                    <p style={{
+                                        fontSize: '11px',
+                                        color: 'var(--text-tertiary)',
+                                        marginBottom: '4px'
+                                    }}>
+                                        Lightning Address
+                                    </p>
+                                    <p style={{
+                                        fontSize: '13px',
+                                        fontWeight: '600',
+                                        color: 'var(--text-primary)',
+                                        fontFamily: 'monospace'
+                                    }}>
+                                        {LIGHTNING_ADDRESS}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}
