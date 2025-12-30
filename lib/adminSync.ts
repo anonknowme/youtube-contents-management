@@ -1,5 +1,5 @@
-import { getChannelInfo, getChannelVideos, fetchTranscript } from './youtubeService';
-import { syncChannelData, saveChannel, saveTranscript } from './databaseService';
+import { getChannelInfo, getChannelVideos, fetchTranscript, getVideosStatistics } from './youtubeService';
+import { syncChannelData, saveChannel, saveTranscript, updateVideoTranscriptStatus } from './databaseService';
 import { getAllowedChannels } from './channelConfig';
 import { supabaseAdmin } from './supabase';
 
@@ -11,11 +11,83 @@ function checkAdminPermission() {
 }
 
 /**
- * 단일 채널 동기화 (스마트 sync)
- * 최신 영상 확인 후 필요시에만 full sync
+ * 자막이 없는 영상들을 찾아 자막을 채워넣습니다.
+ * @param limit - 한 번에 처리할 영상 개수 제한 (기본값: 50)
  */
-export async function syncSingleChannel(channelId: string) {
-    console.log(`🔄 Syncing channel: ${channelId}`);
+export async function syncMissingTranscripts(channelId: string, limit: number = 50) {
+    console.log(`📝 자막 보완 작업 시작: ${channelId} (Limit: ${limit})`);
+
+    const { data: channel } = await checkAdminPermission()
+        .from('channels')
+        .select('id')
+        .eq('channel_id', channelId)
+        .single();
+
+    if (!channel) return;
+
+    // 1. 상태 기반 쿼리로 변경 (pending 상태인 영상만 조회)
+    let offset = 0;
+    const BATCH_SIZE = 50;
+    let totalTranscriptAdded = 0;
+    let processedCount = 0;
+
+    while (processedCount < limit) {
+        const currentLimit = Math.min(BATCH_SIZE, limit - processedCount);
+
+        // transcript_status가 'available'이나 'disabled'가 아닌 영상 조회
+        // 즉, 'pending' 또는 'failed' 상태인 영상들만 가져옴
+        const { data: batchVideos } = await checkAdminPermission()
+            .from('videos')
+            .select('video_id, title')
+            .eq('channel_id', channel.id)
+            .neq('transcript_status', 'available')
+            .neq('transcript_status', 'disabled')
+            .range(offset, offset + currentLimit - 1)
+            .order('published_at', { ascending: false });
+
+        if (!batchVideos || batchVideos.length === 0) break;
+
+        console.log(`📊 배치 (${offset}~${offset + batchVideos.length}) 처리 중...`);
+
+        for (const video of batchVideos) {
+            try {
+                const transcript = await fetchTranscript(video.video_id);
+
+                if (transcript) {
+                    // 성공: saveTranscript 내부에서 status='available'로 업데이트됨
+                    await saveTranscript(video.video_id, transcript);
+                    totalTranscriptAdded++;
+                    console.log(`📝 자막 복구 완료: ${video.title.substring(0, 20)}...`);
+                } else {
+                    // null 반환: Transcript Disabled -> status='disabled' 업데이트
+                    console.log(`❌ 자막 불가능 (Disabled): ${video.title.substring(0, 20)}...`);
+                    await updateVideoTranscriptStatus(video.video_id, 'disabled');
+                }
+            } catch (error) {
+                // 에러 발생: 일시적 오류 -> status 유지 (또는 failed로 업데이트 가능하지만 재시도를 위해 유지)
+                console.error(`⚠️ 자막 가져오기 실패 (일시적 오류): ${video.title.substring(0, 20)}...`);
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 800));
+        }
+
+        offset += currentLimit;
+        processedCount += currentLimit;
+
+        if (batchVideos.length < currentLimit) break;
+        await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
+    console.log(`✅ 자막 동기화 완료: 총 ${totalTranscriptAdded}개 추가됨`);
+}
+
+/**
+ * 단일 채널 동기화 (Light Sync)
+ * 최신 영상 확인 후 필요시에만 가져옵니다. 자막/통계는 건드리지 않습니다.
+ */
+export async function syncNewVideos(channelId: string) {
+    console.log(`🔄 Syncing channel (New Videos Only): ${channelId}`);
+
 
     try {
         // 1. DB에서 채널 확인
@@ -97,73 +169,6 @@ export async function syncSingleChannel(channelId: string) {
             console.log(`✅ 채널 정보 단순 갱신 완료`);
         }
 
-        // ----------------------------------------------------------------
-        // [Step 2] 자막 동기화 (Process 분리 - Pagination 적용)
-        // 채널 Sync 결과와 무관하게, DB에 있는 영상 중 자막이 없는 것을 찾아 채웁니다.
-        // ----------------------------------------------------------------
-        console.log('📝 자막 보완 작업 시작 (Missing Transcript Check)...');
-
-        const targetChannelId = existingChannel ? existingChannel.id : (await checkAdminPermission().from('channels').select('id').eq('channel_id', channelId).single()).data!.id;
-
-        const BATCH_SIZE = 50; // 한 번에 처리할 배치 크기
-        let offset = 0;
-        let hasMore = true;
-        let totalTranscriptAdded = 0;
-
-        while (hasMore) {
-            // 1. 영상 목록 배치 조회 (Pagination)
-            const { data: batchVideos } = await checkAdminPermission()
-                .from('videos')
-                .select('video_id, title')
-                .eq('channel_id', targetChannelId)
-                .range(offset, offset + BATCH_SIZE - 1)
-                .order('published_at', { ascending: false }); // 최신 영상부터 체크
-
-            if (!batchVideos || batchVideos.length === 0) {
-                hasMore = false;
-                break;
-            }
-
-            // 2. 이 배치의 자막 존재 여부 확인
-            const { data: existingTranscripts } = await checkAdminPermission()
-                .from('video_transcripts')
-                .select('video_id')
-                .in('video_id', batchVideos.map(v => v.video_id));
-
-            const existingSet = new Set(existingTranscripts?.map(t => t.video_id));
-            const missingVideos = batchVideos.filter(v => !existingSet.has(v.video_id));
-
-            if (missingVideos.length > 0) {
-                console.log(`📊 배치 (${offset}~${offset + batchVideos.length}) 중 자막 누락 ${missingVideos.length}개 발견`);
-
-                // 3. 누락된 자막 다운로드
-                for (const video of missingVideos) {
-                    const transcript = await fetchTranscript(video.video_id);
-                    if (transcript) {
-                        await saveTranscript(video.video_id, transcript);
-                        totalTranscriptAdded++;
-                        console.log(`📝 자막 복구 완료: ${video.title.substring(0, 20)}...`);
-                    } else {
-                        console.log(`❌ 자막 없음 (Skip): ${video.title.substring(0, 20)}...`);
-                    }
-                    // Rate Limit 방지 (배치 내에서도 딜레이 유지)
-                    await new Promise(resolve => setTimeout(resolve, 800));
-                }
-            } else {
-                console.log(`✨ 배치 (${offset}~${offset + batchVideos.length}) - 모두 자막 있음`);
-            }
-
-            offset += BATCH_SIZE;
-            if (batchVideos.length < BATCH_SIZE) {
-                hasMore = false;
-            }
-
-            // 배치 사이에도 약간의 숨고르기
-            await new Promise(resolve => setTimeout(resolve, 500));
-        }
-
-        console.log(`✅ 자막 동기화 최종 완료: 총 ${totalTranscriptAdded}개 추가됨`);
-
         return {
             success: true,
             action: syncMode,
@@ -175,6 +180,109 @@ export async function syncSingleChannel(channelId: string) {
         console.error(`❌ Sync 실패: ${channelId}`, error);
         throw error;
     }
+}
+
+/**
+ * 채널 내 모든 영상의 통계(조회수, 좋아요, 댓글수)를 최신화
+ */
+export async function updateChannelStats(channelId: string) {
+    console.log('📈 전체 영상 통계 업데이트 시작...');
+
+    // 1. 채널의 모든 영상 ID 가져오기
+    // (먼저 channel_id(UUID)를 알아야 함)
+    const { data: channel } = await checkAdminPermission()
+        .from('channels')
+        .select('id')
+        .eq('channel_id', channelId)
+        .single();
+
+    if (!channel) return;
+
+    // 1. 모든 영상 ID 가져오기 (1000개 제한 돌파를 위한 페이지네이션)
+    let allVideoIds: string[] = [];
+    let offset = 0;
+    const PAGE_SIZE = 1000;
+
+    while (true) {
+        const { data: batch, error } = await checkAdminPermission()
+            .from('videos')
+            .select('video_id')
+            .eq('channel_id', channel.id)
+            .range(offset, offset + PAGE_SIZE - 1);
+
+        if (error) {
+            console.error('❌ 영상 목록 조회 실패:', error);
+            break;
+        }
+
+        if (!batch || batch.length === 0) break;
+
+        allVideoIds = allVideoIds.concat(batch.map(v => v.video_id));
+        offset += PAGE_SIZE;
+
+        // 가져온 개수가 요청한 것보다 적으면 더 이상 데이터가 없는 것
+        if (batch.length < PAGE_SIZE) break;
+    }
+
+    if (allVideoIds.length === 0) {
+        console.log('⚠️ 통계 업데이트할 영상이 없습니다.');
+        return;
+    }
+
+    const videoIds = allVideoIds;
+
+    // 2. YouTube API로 최신 통계 가져오기
+    const statsList = await getVideosStatistics(videoIds);
+
+    // 3. DB 업데이트 (Batch Upsert)
+    // video_id가 Unique여야 onConflict가 작동함.
+    // 만약 Unique가 아니라면 루프 돌아야 하지만, 보통 video_id는 Unique임.
+
+    // 3. DB 업데이트 (Parallel Update)
+    // Upsert는 Not Null 제약(Title 등) 때문에 실패하므로, 개별 Update로 처리합니다.
+
+    // 20개씩 끊어서 병렬 처리 -> 500 에러 방지
+    const batchSize = 20;
+    let updatedCount = 0;
+    const totalBatches = Math.ceil(statsList.length / batchSize);
+
+    for (let i = 0; i < statsList.length; i += batchSize) {
+        const batch = statsList.slice(i, i + batchSize);
+        const currentBatchNum = Math.floor(i / batchSize) + 1;
+
+        process.stdout.write(`💾 DB 저장 중 [Batch ${currentBatchNum}/${totalBatches}] (${batch.length}개) ... `);
+
+        const updatePromises = batch.map(async (item) => {
+            try {
+                const { error } = await checkAdminPermission()
+                    .from('videos')
+                    .update({
+                        view_count: parseInt(item.statistics.viewCount),
+                        like_count: parseInt(item.statistics.likeCount),
+                        comment_count: parseInt(item.statistics.commentCount),
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('video_id', item.id);
+
+                if (error) throw error;
+                return true;
+            } catch (err: any) {
+                console.error(`\n❌ 업데이트 실패 (${item.id}):`, err.message?.substring(0, 100) || 'Unknown error');
+                return false;
+            }
+        });
+
+        const results = await Promise.all(updatePromises);
+        const successCount = results.filter(Boolean).length;
+        updatedCount += successCount;
+
+        process.stdout.write(successCount === batch.length ? '✅ OK\n' : `⚠️ ${successCount}/${batch.length} 성공\n`);
+
+        // Rate Limit 및 DB 부하 방지를 위해 대기 시간 증가 (200ms -> 500ms)
+        await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
+    console.log(`✅ 통계 업데이트 완료: ${updatedCount}/${statsList.length}개 영상`);
 }
 
 export interface SyncResult {
@@ -198,7 +306,7 @@ export async function syncAllAllowedChannels() {
 
     for (const channel of channels) {
         try {
-            const result = await syncSingleChannel(channel.id);
+            const result = await syncNewVideos(channel.id);
             results.push({
                 channelId: channel.id,
                 name: channel.name,

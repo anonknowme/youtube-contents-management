@@ -91,64 +91,77 @@ export async function saveVideos(
     subscriberCount: number,
     videos: YouTubeVideo[]
 ): Promise<number> {
-    console.log('💾 영상 저장 중:', videos.length, '개');
+    console.log(`💾 영상 저장 중: ${videos.length} 개`);
 
     let savedCount = 0;
     let updatedCount = 0;
 
-    for (const video of videos) {
-        const viewCount = parseInt(video.statistics.viewCount);
+    // 배치 처리 (10개씩)
+    const batchSize = 10;
+    const totalBatches = Math.ceil(videos.length / batchSize);
 
-        // 이미 존재하는지 확인
-        const { data: existing } = await checkAdminPermission()
-            .from('videos')
-            .select('id')
-            .eq('video_id', video.id)
-            .single();
+    for (let i = 0; i < videos.length; i += batchSize) {
+        const batch = videos.slice(i, i + batchSize);
+        const currentBatchNum = Math.floor(i / batchSize) + 1;
 
-        if (existing) {
-            // 통계만 업데이트 (조회수, 좋아요 등은 변할 수 있음)
-            const { error } = await checkAdminPermission()
+        process.stdout.write(`💾 DB 저장 중 [Batch ${currentBatchNum}/${totalBatches}] (${batch.length}개) ... `);
+
+        for (const video of batch) {
+            const viewCount = parseInt(video.statistics.viewCount);
+
+            // 이미 존재하는지 확인
+            const { data: existing } = await checkAdminPermission()
                 .from('videos')
-                .update({
-                    view_count: viewCount,
-                    like_count: parseInt(video.statistics.likeCount),
-                    comment_count: parseInt(video.statistics.commentCount),
-                    updated_at: new Date().toISOString(),
-                })
-                .eq('video_id', video.id);
+                .select('id')
+                .eq('video_id', video.id)
+                .single();
 
-            if (error) {
-                console.error('❌ 영상 업데이트 실패:', video.id, error);
-            } else {
-                updatedCount++;
-            }
-        } else {
-            // 새로 삽입
-            const { error } = await checkAdminPermission()
-                .from('videos')
-                .insert({
-                    video_id: video.id,
-                    channel_id: supabaseChannelId,
-                    title: video.title,
-                    description: video.description,
-                    thumbnail_url: video.thumbnails.high,
-                    url: video.url,
-                    view_count: viewCount,
-                    like_count: parseInt(video.statistics.likeCount),
-                    comment_count: parseInt(video.statistics.commentCount),
-                    duration_seconds: video.contentDetails.durationSeconds,
-                    published_at: video.publishedAt,
-                    definition: video.contentDetails.definition,
-                    has_captions: video.contentDetails.caption === 'true',
-                });
+            if (existing) {
+                // 통계만 업데이트 (조회수, 좋아요 등은 변할 수 있음)
+                const { error } = await checkAdminPermission()
+                    .from('videos')
+                    .update({
+                        view_count: viewCount,
+                        like_count: parseInt(video.statistics.likeCount),
+                        comment_count: parseInt(video.statistics.commentCount),
+                        updated_at: new Date().toISOString(),
+                    })
+                    .eq('video_id', video.id);
 
-            if (error) {
-                console.error('❌ 영상 저장 실패:', video.id, error);
+                if (error) {
+                    console.error('❌ 영상 업데이트 실패:', video.id, error);
+                } else {
+                    updatedCount++;
+                }
             } else {
-                savedCount++;
+                // 새로 삽입
+                const { error } = await checkAdminPermission()
+                    .from('videos')
+                    .insert({
+                        video_id: video.id,
+                        channel_id: supabaseChannelId,
+                        title: video.title,
+                        description: video.description,
+                        thumbnail_url: video.thumbnails.high,
+                        url: video.url,
+                        view_count: viewCount,
+                        like_count: parseInt(video.statistics.likeCount),
+                        comment_count: parseInt(video.statistics.commentCount),
+                        duration_seconds: video.contentDetails.durationSeconds,
+                        published_at: video.publishedAt,
+                        definition: video.contentDetails.definition,
+                        has_captions: video.contentDetails.caption === 'true',
+                    });
+
+                if (error) {
+                    console.error('❌ 영상 저장 실패:', video.id, error);
+                } else {
+                    savedCount++;
+                }
             }
         }
+
+        process.stdout.write(`✅ OK\n`);
     }
 
     console.log(`✅ 영상 저장 완료: ${savedCount}개 신규, ${updatedCount}개 업데이트`);
@@ -200,5 +213,27 @@ export async function saveTranscript(videoId: string, transcript: string) {
     if (error) {
         console.error(`❌ 자막 저장 실패 (${videoId}):`, error);
         throw error;
+    }
+
+    // 자막 상태를 'available'로 업데이트
+    await updateVideoTranscriptStatus(videoId, 'available');
+}
+
+/**
+ * 영상의 자막 상태를 업데이트합니다.
+ * @param status - 'pending' | 'available' | 'disabled' | 'failed'
+ */
+export async function updateVideoTranscriptStatus(videoId: string, status: string) {
+    const { error } = await checkAdminPermission()
+        .from('videos')
+        .update({
+            transcript_status: status,
+            updated_at: new Date().toISOString()
+        })
+        .eq('video_id', videoId);
+
+    if (error) {
+        console.error(`❌ 자막 상태 업데이트 실패 (${videoId} -> ${status}):`, error);
+        // 상태 업데이트 실패는 치명적이지 않으므로 throw하지 않음 (로그만 남김)
     }
 }

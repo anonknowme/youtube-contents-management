@@ -9,6 +9,7 @@ interface AvatarButtonProps {
     size?: 'sm' | 'md' | 'lg';
     onClick?: () => void;
     className?: string;
+    style?: React.CSSProperties;
 }
 
 export const AvatarButton = ({
@@ -18,7 +19,8 @@ export const AvatarButton = ({
     subtitle,
     size = 'md',
     onClick,
-    className = ''
+    className = '',
+    style
 }: AvatarButtonProps) => {
     const sizeConfig = {
         sm: { avatar: '32px', fontSize: '13px', gap: '8px', padding: '8px 12px' },
@@ -45,7 +47,8 @@ export const AvatarButton = ({
                 fontFamily: 'var(--font-family-base)',
                 minHeight: 'var(--touch-target-size)',
                 width: '100%',
-                textAlign: 'left'
+                textAlign: 'left',
+                ...style
             }}
             onMouseEnter={(e) => {
                 e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)';

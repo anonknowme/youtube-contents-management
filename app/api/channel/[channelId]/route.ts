@@ -21,17 +21,8 @@ export async function GET(
         console.log('\n========================================');
         console.log('📖 채널 조회 (읽기 전용):', channelId);
 
-        // 화이트리스트 체크
-        if (!isChannelAllowed(channelId)) {
-            console.log('❌ 허용되지 않은 채널');
-            return NextResponse.json(
-                {
-                    success: false,
-                    error: '이 채널은 현재 무료로 제공되지 않습니다.'
-                },
-                { status: 403 }
-            );
-        }
+        // 화이트리스트 체크 제거 - DB에 있으면 조회 가능하도록 변경
+        // if (!isChannelAllowed(channelId)) { ... }
 
         // DB에서 채널 조회
         const { data: channel, error: channelError } = await supabase

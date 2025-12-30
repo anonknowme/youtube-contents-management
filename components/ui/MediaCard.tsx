@@ -13,6 +13,7 @@ interface MediaCardProps {
     viralScore?: number;
     onClick?: () => void;
     className?: string;
+    style?: React.CSSProperties;
 }
 
 export const MediaCard = ({
@@ -25,7 +26,8 @@ export const MediaCard = ({
     publishedAt,
     viralScore,
     onClick,
-    className = ''
+    className = '',
+    style
 }: MediaCardProps) => {
     return (
         <div
@@ -35,7 +37,8 @@ export const MediaCard = ({
                 padding: '0',
                 display: 'flex',
                 flexDirection: 'column',
-                height: '100%'
+                height: '100%',
+                ...style
             }}
             onClick={onClick}
         >

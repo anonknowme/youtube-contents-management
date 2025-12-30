@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { syncSingleChannel, syncAllAllowedChannels } from '@/lib/adminSync';
+import { syncNewVideos, syncAllAllowedChannels } from '@/lib/adminSync';
 
 export async function POST(request: NextRequest) {
     const startTime = Date.now();
@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
         if (channelId) {
             // 단일 채널 sync
             console.log(`대상: 단일 채널 (${channelId})`);
-            const result = await syncSingleChannel(channelId);
+            const result = await syncNewVideos(channelId);
             results = [{ channelId, ...result }];
         } else {
             // 모든 허용된 채널 sync

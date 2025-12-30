@@ -237,3 +237,93 @@ body {
     opacity: 1;
   }
 }
+
+/* Markdown Content Styles */
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3 {
+  margin-top: 1.5em;
+  margin-bottom: 0.8em;
+  font-weight: bold;
+  color: var(--text-primary);
+}
+
+.markdown-content h3 {
+  font-size: 1.1em;
+  color: var(--accent-primary);
+}
+
+.markdown-content p {
+  margin-bottom: 1em;
+}
+
+.markdown-content ul,
+.markdown-content ol {
+  margin-bottom: 1em;
+  padding-left: 1.5em;
+  list-style-type: disc;
+}
+
+.markdown-content li {
+  margin-bottom: 0.5em;
+}
+
+.markdown-content strong {
+  color: var(--highlight-text);
+  font-weight: bold;
+}
+
+.markdown-content blockquote {
+  border-left: 4px solid var(--border-secondary);
+  padding-left: 1em;
+  margin-bottom: 1em;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.markdown-content code {
+  background-color: var(--bg-hover);
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.9em;
+}
+
+.markdown-content pre {
+  background-color: var(--bg-secondary);
+  padding: 1em;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin-bottom: 1em;
+}
+
+/* Skeleton Loading Animation */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-line {
+  background: linear-gradient(90deg,
+      var(--bg-secondary) 25%,
+      var(--bg-tertiary) 50%,
+      var(--bg-secondary) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+  height: 1em;
+  margin-bottom: 0.8em;
+}
+
+:root[data-theme='cypherpunk'] .skeleton-line {
+  background: linear-gradient(90deg,
+      rgba(57, 255, 20, 0.05) 25%,
+      rgba(57, 255, 20, 0.15) 50%,
+      rgba(57, 255, 20, 0.05) 75%);
+  background-size: 200% 100%;
+}

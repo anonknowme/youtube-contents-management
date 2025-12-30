@@ -25,7 +25,9 @@ export default function Home() {
     const [sortBy, setSortBy] = useState<'viral_high' | 'viral_low' | 'latest'>('viral_high');
     const [allowedChannels, setAllowedChannels] = useState<any[]>([]);
     const [videoType, setVideoType] = useState<'all' | 'regular' | 'shorts'>('all');
+    const [syncRequiredChannelId, setSyncRequiredChannelId] = useState<string | null>(null);
     const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
+    const [activeTab, setActiveTab] = useState<'maxi' | 'general'>('maxi');
 
     const searchSectionRef = useRef<HTMLDivElement>(null);
 
@@ -73,7 +75,9 @@ export default function Home() {
         if (!idToSearch) return;
 
         setLoading(true);
+        setLoading(true);
         setError('');
+        setSyncRequiredChannelId(null);
         setLoadingMessage('🔍 채널 확인 중...');
 
         const timer1 = setTimeout(() => setLoadingMessage('⏳ 잠시만 기다려주세요...'), 3000);
@@ -95,13 +99,52 @@ export default function Home() {
                     setLoadingMessage(`✅ 로드 완료! (${json.data.videos.length}개 영상)`);
                 }
             } else {
-                setError(json.error);
+                if (res.status === 404) {
+                    setSyncRequiredChannelId(idToSearch);
+                    setError('아직 분석되지 않은 채널입니다.');
+                } else {
+                    setError(json.error);
+                }
             }
         } catch (err) {
             clearTimeout(timer1);
             setError('오류 발생');
         } finally {
-            setTimeout(() => setLoading(false), 500);
+            if (!syncRequiredChannelId) {
+                setTimeout(() => setLoading(false), 500);
+            } else {
+                setLoading(false);
+            }
+        }
+    };
+
+    const handleSync = async () => {
+        if (!syncRequiredChannelId) return;
+
+        setLoading(true);
+        setLoadingMessage('📡 YouTube에서 데이터 가져오는 중...');
+        setError('');
+
+        try {
+            // maxVideos=0으로 설정하여 모든 영상 가져오기
+            const res = await fetch(`/api/sync/channel?channelId=${syncRequiredChannelId}&maxVideos=0`, {
+                method: 'POST'
+            });
+            const json = await res.json();
+
+            if (json.success) {
+                setLoadingMessage('✅ 동기화 완료! 분석을 시작합니다...');
+                // 동기화 성공 후 약간의 딜레이 후 재검색
+                setTimeout(() => {
+                    search(syncRequiredChannelId);
+                }, 1000);
+            } else {
+                setError(json.error || '동기화 실패');
+                setLoading(false);
+            }
+        } catch (e) {
+            setError('동기화 중 오류 발생');
+            setLoading(false);
         }
     };
 
@@ -143,51 +186,76 @@ export default function Home() {
             </div>
 
             {/* 빠른 선택 */}
-            {allowedChannels.length > 0 && (
+            <div style={{
+                backgroundColor: 'var(--bg-secondary)',
+                padding: '20px',
+                marginBottom: '16px',
+                borderRadius: '12px',
+                boxShadow: 'var(--shadow-base)'
+            }}>
                 <div style={{
-                    backgroundColor: 'var(--bg-secondary)',
-                    padding: '20px',
-                    marginBottom: '16px',
-                    borderRadius: '12px',
-                    boxShadow: 'var(--shadow-base)'
+                    display: 'flex',
+                    gap: '8px',
+                    marginBottom: '16px'
                 }}>
-                    <p style={{
-                        fontSize: '16px',
-                        fontWeight: 'bold',
-                        marginBottom: '16px',
-                        color: 'var(--text-primary)'
-                    }}>
-                        빠른 선택
-                    </p>
-                    <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: '1fr',
-                        gap: '12px'
-                    }}>
-                        {allowedChannels.map(ch => (
-                            <AvatarButton
-                                key={ch.id}
-                                src={ch.thumbnail_url}
-                                alt={ch.name}
-                                label={ch.name}
-                                subtitle={ch.subscriber_count ? `구독자 ${formatNumber(ch.subscriber_count)}` : undefined}
-                                onClick={() => {
-                                    if (!loading) {
-                                        search(ch.id);
-                                        // Scroll to search section
-                                        setTimeout(() => {
-                                            searchSectionRef.current?.scrollIntoView({
-                                                behavior: 'smooth',
-                                                block: 'start'
-                                            });
-                                        }, 100);
-                                    }
-                                }}
-                            />
-                        ))}
-                    </div>
+                    <Button
+                        variant={activeTab === 'maxi' ? 'primary' : 'secondary'}
+                        onClick={() => setActiveTab('maxi')}
+                        style={{ fontSize: '14px', flex: 1, height: '40px' }}
+                    >
+                        비트맥시 전용 💊
+                    </Button>
+                    <Button
+                        variant={activeTab === 'general' ? 'primary' : 'secondary'}
+                        onClick={() => setActiveTab('general')}
+                        style={{ fontSize: '14px', flex: 1, height: '40px' }}
+                    >
+                        일반 채널 📺
+                    </Button>
                 </div>
-            )}
+
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr',
+                    gap: '12px'
+                }}>
+                    {allowedChannels
+                        .filter(ch => activeTab === 'maxi' ? ch.is_allowed : !ch.is_allowed)
+                        .map(ch => {
+                            return (
+                                <AvatarButton
+                                    key={ch.id}
+                                    src={ch.thumbnail_url}
+                                    alt={ch.name}
+                                    label={ch.name}
+                                    subtitle={ch.subscriber_count ? `구독자 ${formatNumber(ch.subscriber_count)}` : undefined}
+                                    onClick={() => {
+                                        if (!loading) {
+                                            search(ch.id);
+                                            // Scroll to search section
+                                            setTimeout(() => {
+                                                searchSectionRef.current?.scrollIntoView({
+                                                    behavior: 'smooth',
+                                                    block: 'start'
+                                                });
+                                            }, 100);
+                                        }
+                                    }}
+                                />
+                            );
+                        })}
+                    {allowedChannels.filter(ch => activeTab === 'maxi' ? ch.is_allowed : !ch.is_allowed).length === 0 && (
+                        <div style={{
+                            textAlign: 'center',
+                            padding: '20px',
+                            color: 'var(--text-tertiary)',
+                            fontSize: '14px'
+                        }}>
+                            {activeTab === 'maxi' ? '등록된 맥시 채널이 없습니다.' : '등록된 일반 채널이 없습니다.'}
+                        </div>
+                    )}
+                </div>
+            </div>
 
             {/* 검색 */}
             <div
@@ -203,7 +271,7 @@ export default function Home() {
                     type="text"
                     value={channelId}
                     onChange={(e) => setChannelId(e.target.value)}
-                    placeholder="또는 채널 ID 직접 입력"
+                    placeholder="채널 ID 직접 입력"
                     disabled={loading}
                     onKeyPress={(e) => e.key === 'Enter' && !loading && search()}
                 />
@@ -230,6 +298,7 @@ export default function Home() {
                 )}
             </div>
 
+
             {/* 에러 */}
             {error && (
                 <div style={{
@@ -241,6 +310,24 @@ export default function Home() {
                     fontSize: '14px'
                 }}>
                     {error}
+                </div>
+            )}
+
+            {/* 동기화 버튼 (데이터 없음 에러 시 표시) */}
+            {syncRequiredChannelId && !loading && (
+                <div style={{ marginBottom: '16px' }}>
+                    <Button
+                        onClick={handleSync}
+                        style={{
+                            width: '100%',
+                            padding: '16px',
+                            fontSize: '16px',
+                            background: 'var(--accent-primary)', // 강조색
+                            animation: 'pulse 2s infinite'
+                        }}
+                    >
+                        ✨ 이 채널 분석 시작하기
+                    </Button>
                 </div>
             )}
 
@@ -360,50 +447,83 @@ export default function Home() {
                         gap: '20px'
                     }}>
                         {(() => {
-                            // 타입 필터링
+                            // 1. 현재 채널이 '일반 채널'인지 확인 (Config에 없는 채널)
+                            const isAllowedChannel = allowedChannels.find(ch => ch.id === data.channel.channel_id)?.is_allowed;
+                            const isProd = process.env.NODE_ENV === 'production';
+                            const isRestricted = !isAllowedChannel && isProd;
+
+                            // 2. 타입 필터링
                             let filteredVideos = filterByVideoType(data.videos || [], videoType);
 
-                            if (sortBy === 'viral_high') {
-                                filteredVideos.sort((a, b) => (b.viral_score || 0) - (a.viral_score || 0));
-                            } else if (sortBy === 'viral_low') {
-                                filteredVideos.sort((a, b) => (a.viral_score || 0) - (b.viral_score || 0));
-                            } else if (sortBy === 'latest') {
+                            // 3. 정렬 로직
+                            if (isRestricted) {
+                                // 제한된 모드(일반채널+PROD)에서는 '자막 있는 영상'을 최상단으로 + 그 안에서 바이럴/날짜 정렬
                                 filteredVideos.sort((a, b) => {
-                                    const dateA = new Date(a.published_at || 0).getTime();
-                                    const dateB = new Date(b.published_at || 0).getTime();
-                                    return dateB - dateA;
+                                    const aHasTranscript = a.transcript_status === 'available';
+                                    const bHasTranscript = b.transcript_status === 'available';
+
+                                    if (aHasTranscript && !bHasTranscript) return -1;
+                                    if (!aHasTranscript && bHasTranscript) return 1;
+
+                                    // 자막 유무가 같으면 기존 정렬 기준 따름
+                                    if (sortBy === 'viral_high') return (b.viral_score || 0) - (a.viral_score || 0);
+                                    if (sortBy === 'viral_low') return (a.viral_score || 0) - (b.viral_score || 0);
+                                    if (sortBy === 'latest') return new Date(b.published_at || 0).getTime() - new Date(a.published_at || 0).getTime();
+                                    return 0;
                                 });
+                            } else {
+                                // 기존 정렬
+                                if (sortBy === 'viral_high') {
+                                    filteredVideos.sort((a, b) => (b.viral_score || 0) - (a.viral_score || 0));
+                                } else if (sortBy === 'viral_low') {
+                                    filteredVideos.sort((a, b) => (a.viral_score || 0) - (b.viral_score || 0));
+                                } else if (sortBy === 'latest') {
+                                    filteredVideos.sort((a, b) => {
+                                        const dateA = new Date(a.published_at || 0).getTime();
+                                        const dateB = new Date(b.published_at || 0).getTime();
+                                        return dateB - dateA;
+                                    });
+                                }
                             }
 
-                            return filteredVideos.map((video: any) => (
-                                <div key={video.id} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                    <MediaCard
-                                        thumbnailUrl={video.thumbnail_url}
-                                        title={video.title}
-                                        channelName={data.channel.title}
-                                        viewCount={formatNumber(video.view_count)}
-                                        likeCount={formatNumber(video.like_count)}
-                                        commentCount={formatNumber(video.comment_count)}
-                                        publishedAt={new Date(video.published_at).toLocaleDateString('ko-KR')}
-                                        viralScore={video.viral_score}
-                                    />
-                                    <div style={{ display: 'flex', gap: '8px' }}>
-                                        <Button
-                                            variant="secondary"
-                                            onClick={() => window.open(video.url, '_blank')}
-                                            style={{ flex: 1 }}
-                                        >
-                                            영상 보기
-                                        </Button>
-                                        <Button
-                                            onClick={() => openVideoDetail(video.video_id)}
-                                            style={{ flex: 1 }}
-                                        >
-                                            📊 상세 분석
-                                        </Button>
+                            return filteredVideos.map((video: any) => {
+                                const hasTranscript = video.transcript_status === 'available';
+                                const disableDetail = isRestricted && !hasTranscript;
+
+                                return (
+                                    <div key={video.id} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                        <MediaCard
+                                            thumbnailUrl={video.thumbnail_url}
+                                            title={video.title}
+                                            channelName={data.channel.title}
+                                            viewCount={formatNumber(video.view_count)}
+                                            likeCount={formatNumber(video.like_count)}
+                                            commentCount={formatNumber(video.comment_count)}
+                                            publishedAt={new Date(video.published_at).toLocaleDateString('ko-KR')}
+                                            viralScore={video.viral_score}
+                                            style={disableDetail ? { opacity: 0.4 } : undefined}
+                                            onClick={disableDetail ? undefined : () => openVideoDetail(video.video_id)}
+                                        />
+                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                            <Button
+                                                variant="secondary"
+                                                onClick={() => window.open(video.url, '_blank')}
+                                                style={{ flex: 1 }}
+                                            >
+                                                영상 보기
+                                            </Button>
+                                            <Button
+                                                onClick={() => openVideoDetail(video.video_id)}
+                                                style={{ flex: 1 }}
+                                                disabled={disableDetail}
+                                                variant={disableDetail ? 'secondary' : 'primary'}
+                                            >
+                                                {disableDetail ? '🚧 준비중' : '📊 상세 분석'}
+                                            </Button>
+                                        </div>
                                     </div>
-                                </div>
-                            ));
+                                )
+                            });
                         })()}
                     </div>
                 </>

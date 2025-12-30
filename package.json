@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "sync": "tsx scripts/sync.ts"
+    "sync": "npm run sync:light",
+    "sync:light": "tsx scripts/sync-light.ts",
+    "sync:stats": "tsx scripts/sync-stats.ts",
+    "sync:transcripts": "tsx scripts/sync-transcripts.ts"
   },
   "dependencies": {
     "@danielxceron/youtube-transcript": "^1.2.3",
@@ -17,7 +20,9 @@
     "googleapis": "^169.0.0",
     "next": "16.1.1",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

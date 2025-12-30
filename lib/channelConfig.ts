@@ -14,11 +14,11 @@ export interface AllowedChannel {
 export const ALLOWED_CHANNELS: AllowedChannel[] = [
     {
         id: 'UCKajCwiIKhRieKpvKZmFtHA',
-        name: '지분전쟁⚡️상원수'
+        name: '지분전쟁'
     },
     {
         id: 'UC9DUWk8qTAgxeYX0kH0muNw',
-        name: '오렌지캬라멜비트코인'
+        name: '오캬비'
     },
     {
         id: 'UC1f_j9wOASvYAvADpwTXT0Q',
@@ -42,11 +42,19 @@ export const ALLOWED_CHANNELS: AllowedChannel[] = [
     },
     {
         id: 'UC1OxcwoU_Pu5CPoVhrUyDgg',
-        name: 'Buck차는 비트코인'
+        name: 'Buck차는비트코인'
     },
     {
         id: 'UCVLrq7pwVPTPHszFNbr8mSA',
-        name: '1분 비트코인'
+        name: '1분비트코인'
+    },
+    {
+        id: 'UC_Q6qPF2kxWOJbv7_3rPikA',
+        name: '비미사'
+    },
+    {
+        id: 'UCi9d9u9KvgRDSXqnQrMTjAw',
+        name: '신박한신박사'
     },
 ];
 

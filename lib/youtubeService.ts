@@ -289,9 +289,16 @@ export async function fetchTranscript(videoId: string): Promise<string | null> {
     try {
         const transcript = await YoutubeTranscript.fetchTranscript(videoId);
         return transcript.map(item => item.text).join(' ');
-    } catch (error) {
-        console.warn(`[Transcript] Failed to fetch for ${videoId}`);
-        return null; // 실패해도 전체 프로세스는 계속되도록 null 반환
+    } catch (error: any) {
+        // "Transcript is disabled" 에러는 자막이 없는 것이 확실함 -> null 반환
+        if (error.message && error.message.includes('Transcript is disabled')) {
+            console.warn(`[Transcript] Disabled for ${videoId}`);
+            return null;
+        }
+
+        // 그 외 에러(네트워크 등)는 throw하여 상위에서 재시도 여부 결정하게 함
+        console.warn(`[Transcript] Error for ${videoId}:`, error.message);
+        throw error;
     }
 }
 
@@ -327,4 +334,52 @@ export async function getComments(videoId: string, maxResults: number = 50): Pro
         console.warn(`[Comments] Failed to fetch for ${videoId}`, error);
         return [];
     }
+}
+
+/**
+ * 영상들의 최신 통계 정보만 가져오기 (배치 처리 지원)
+ * 
+ * @param videoIds - 영상 ID 배열
+ * @returns ID와 통계 정보가 담긴 객체 배열
+ */
+export async function getVideosStatistics(videoIds: string[]): Promise<Array<{ id: string, statistics: any }>> {
+    const apiKey = process.env.YOUTUBE_API_KEY;
+    if (!apiKey) throw new Error('YOUTUBE_API_KEY Missing');
+
+    const results: Array<{ id: string, statistics: any }> = [];
+    const batchSize = 50;
+
+    console.log(`📊 통계 업데이트 시작: 총 ${videoIds.length}개 영상`);
+
+    for (let i = 0; i < videoIds.length; i += batchSize) {
+        const batch = videoIds.slice(i, i + batchSize);
+
+        const url = new URL('https://www.googleapis.com/youtube/v3/videos');
+        url.searchParams.append('part', 'statistics');
+        url.searchParams.append('id', batch.join(','));
+        url.searchParams.append('key', apiKey);
+
+        try {
+            // console.log(`☁️ YouTube API 요청 (Batch ${i / batchSize + 1})...`);
+            const response = await fetch(url.toString());
+            const data = await response.json();
+
+            if (data.items) {
+                console.log(`📥 YouTube 데이터 수신 완료 (${data.items.length}개)`);
+                const stats = data.items.map((item: any) => ({
+                    id: item.id,
+                    statistics: {
+                        viewCount: item.statistics.viewCount || '0',
+                        likeCount: item.statistics.likeCount || '0',
+                        commentCount: item.statistics.commentCount || '0'
+                    }
+                }));
+                results.push(...stats);
+            }
+        } catch (error) {
+            console.error(`❌ 통계 Fetch 실패 (Batch ${i}):`, error);
+        }
+    }
+
+    return results;
 }

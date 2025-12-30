@@ -8,6 +8,8 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Panel } from '@/components/ui/Panel';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 interface VideoDetailViewProps {
     videoId: string;
     onBack: () => void;
@@ -328,7 +330,7 @@ ${transcript}
                     </Card>
                 )}
 
-                {aiAnalysis && (
+                {(aiAnalysis || aiLoading) && (
                     <Panel variant="highlighted">
                         <div style={{
                             display: 'flex',
@@ -345,15 +347,29 @@ ${transcript}
                                 AI 분석 결과 (바이럴 인사이트)
                             </h3>
                         </div>
-                        <p style={{
+                        <div className="markdown-content" style={{
                             fontSize: '15px',
                             lineHeight: '1.8',
-                            color: 'var(--text-primary)',
-                            margin: 0,
-                            whiteSpace: 'pre-wrap'
+                            color: 'var(--text-primary)'
                         }}>
-                            {aiAnalysis}
-                        </p>
+                            {aiLoading ? (
+                                <div style={{ paddingTop: '8px' }}>
+                                    <div className="skeleton-line" style={{ width: '60%', height: '1.5em', marginBottom: '1.5em' }} />
+                                    <div className="skeleton-line" style={{ width: '100%' }} />
+                                    <div className="skeleton-line" style={{ width: '95%' }} />
+                                    <div className="skeleton-line" style={{ width: '90%' }} />
+                                    <div style={{ height: '1em' }} />
+                                    <div className="skeleton-line" style={{ width: '50%', height: '1.5em', marginBottom: '1.5em' }} />
+                                    <div className="skeleton-line" style={{ width: '98%' }} />
+                                    <div className="skeleton-line" style={{ width: '85%' }} />
+                                    <div className="skeleton-line" style={{ width: '92%' }} />
+                                </div>
+                            ) : (
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                    {aiAnalysis}
+                                </ReactMarkdown>
+                            )}
+                        </div>
                     </Panel>
                 )}
             </div>
