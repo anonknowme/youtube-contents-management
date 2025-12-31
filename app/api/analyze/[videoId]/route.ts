@@ -16,7 +16,30 @@ export async function POST(
             throw new Error('Server configuration error: SUPABASE_SERVICE_ROLE_KEY missing');
         }
 
-        // 1. Fetch transcript directly from DB
+        // Get viral_score from request body (already calculated on frontend)
+        const body = await request.json();
+        const viral_score = body.viral_score || 0;
+
+        // 1. Fetch video data from DB
+        const { data: videoData, error: videoError } = await supabaseAdmin
+            .from('videos')
+            .select('title, video_id, thumbnail_url, view_count, like_count, comment_count, published_at')
+            .eq('video_id', videoId)
+            .single();
+
+        if (videoError) {
+            console.error('[AI Analysis] Video query error:', videoError);
+            throw new Error(`영상 데이터 조회 실패: ${videoError.message}`);
+        }
+
+        if (!videoData) {
+            throw new Error('영상 데이터를 찾을 수 없습니다.');
+        }
+
+        // Add viral_score from frontend to videoData
+        const videoWithScore = { ...videoData, viral_score };
+
+        // 2. Fetch transcript directly from DB
         const { data: transcriptData } = await supabaseAdmin
             .from('video_transcripts')
             .select('content')
@@ -29,7 +52,7 @@ export async function POST(
 
         const transcript = transcriptData.content;
 
-        // 2. Fetch comments directly from YouTube API
+        // 3. Fetch comments directly from YouTube API
         // DB 저장 없이 실시간으로 가져와서 분석에 활용
         let comments: any[] = [];
         try {
@@ -41,8 +64,8 @@ export async function POST(
 
         console.log(`[AI Analysis] Transcript length: ${transcript.length} characters`);
 
-        // Generate summary using Gemini (with comments)
-        const summary = await summarizeTranscript(transcript, comments);
+        // Generate summary using Gemini (with video metadata and comments)
+        const summary = await summarizeTranscript(transcript, videoWithScore, comments);
 
         console.log(`[AI Analysis] Summary generated successfully`);
 
